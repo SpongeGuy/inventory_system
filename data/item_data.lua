@@ -9,8 +9,10 @@ items.STAT_CATEGORIES = {
 	movement_speed = "movement_speed",
 	armor = "armor",
 	lil_gabbron = "lil_gabbron",
+	wizard_sponge = "wizard_sponge",
 	pierce = "pierce",
 	attack_speed = "attack_speed",
+	healing_power = "healing_power",
 }
 
 items.DESC_CATEGORIES = {
@@ -248,7 +250,7 @@ items.ring_of_barley = {
 	{
 		"lore", 
 		{
-			"Equip to guarantee large amounts of bread along your path."
+			"Get ready to carbo-load."
 		}
 	},
 	{
@@ -259,7 +261,234 @@ items.ring_of_barley = {
 				{
 					"When an enemy is killed, 10% chance to spawn a loaf of bread.",
 					"If a loaf of bread touches another loaf of bread, they will fuse.",
-					"This surely can't be bad, right?"
+					"This surely can't be bad, right?" -- evil loaf if too much fusion, bread berzerks
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"percent",
+					10
+				}
+			}
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"Eating a loaf of bread increases your attack speed by 10%."
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"bullet",
+				{
+					"Bread heals you for 20% more."
+				}
+			}
+		}
+	}
+}
+
+items.toaster = {
+	{
+		"name",
+		{
+			"Toaster"
+		}
+	},
+	{
+		"lore",
+		{
+			"Not recommended for use around water."
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Create an inferno aura around you, burning enemies and loaves of bread.",
+					"Loaves of bread become toast, increasing their healing power."
+				}
+			}
+			
+		}
+	}
+}
+
+items.sponge_with_cap = {
+	{
+		"name",
+		{
+			"Sponge With Cap"
+		}
+	},
+	{
+
+	}
+}
+
+items.sponge_with_bowler = {
+	{
+		"name",
+		{
+			"Sponge With Bowler",
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"A sponge rides on your back.",
+					"The sponge heals you for 5% of damage you take."
+				}
+			}
+		}
+	}
+}
+
+items.sponge_with_wizard_hat = {
+	{
+		"name",
+		{
+			"Sponge With Wizard Hat"
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"A sponge follows you around!",
+					"The sponge lights enemies on fire.",
+					"The sponge creates electrical discharges, exploding enemies on fire.",
+				}
+			},
+			{
+				"wizard_sponge",
+				{
+					"add",
+					1
+				}
+			}
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"A sponge follows you around!",
+					"The sponge lights enemies on fire.",
+				}
+			},
+			{
+				"wizard_sponge",
+				{
+					"add",
+					1
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"bullet",
+				{
+					"A sponge rides on your back.",
+				}
+			},
+			{
+				"movement_speed",
+				{
+					"add",
+					3
+				}
+			}
+		}
+	}
+}
+
+items.dog_chow = {
+	{
+		"name",
+		{
+			"Doggie Chow"
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"bullet",
+				{
+					"Friends do 20% more damage."
+				}
+			}
+		}
+	}
+}
+
+items.quacker = {
+	{
+		"name",
+		{
+			"Quacker"
+		}
+	},
+	{
+		"lore",
+		{
+			"This fella is ravenous!"
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Loaves of bread attract ducks.",
+					"Ducks will peck at creatures which are too close to loaves of bread.",
+					"Ducks who eat toast will ignite, making them faster."
+				}
+			}
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"When you eat a loaf of bread, emit a duck shockwave which does 20 damage to enemies.",
+					"The shockwave does more damage if the loaf of bread is larger."
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"bullet",
+				{
+					"Bread heals you for 20% more."
 				}
 			}
 		}
@@ -280,12 +509,55 @@ items.personal_wormhole = {
 		}
 	},
 	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Gain a 0.1% chance to spawn an item every time you damage an enemy."
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"percent",
+					10
+				}
+			}
+		}
+	},
+	{
 		"slot",
 		{
 			{
 				"bullet",
 				{
 					"Spawn a random item in your bag at the start of every zone."
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"add",
+					10
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"description",
+				{
+					"You are now wearing cargo shorts."
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"add",
+					2
 				}
 			}
 		}
@@ -313,7 +585,7 @@ items.blast_gem = {
 			{
 				"bullet",
 				{
-					"Your attacks explode on hit, dealing an extra 25% of your total attack damage.",
+					"Your attacks explode on hit, dealing 25% of your total attack damage.",
 					"The size of the explosion increases based on your total attack damage."
 				}
 			},
@@ -322,6 +594,25 @@ items.blast_gem = {
 				{
 					"add",
 					15
+				}
+			}
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"Enemies explode on death, dealing 10% of your total attack damage.",
+					"The size of the explosion, increaes based on your total attack damage."
+				}
+			},
+			{
+				"attack_damage",
+				{
+					"add",
+					10
 				}
 			}
 		}
@@ -446,7 +737,7 @@ items.jugg_milk_carton = {
 				"armor",
 				{
 					"add",
-					5
+					10
 				}
 			}
 		}
@@ -458,7 +749,7 @@ items.jugg_milk_carton = {
 				"armor",
 				{
 					"add",
-					5
+					10
 				}
 			}
 		}
@@ -487,7 +778,20 @@ items.pink_plasmid = {
 	{
 		"lore",
 		{
-			"It's fuzzy sometimes, smooth others."
+			"It's fuzzy in some places, smooth others."
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Enemies stick to you when you run into them.",
+					"Gain 1 armor for every enemy stuck to you.",
+					"Each enemy only sticks around to tank 100 damage.",
+				}
+			}
 		}
 	}
 }
@@ -503,6 +807,19 @@ items.blue_plasmid = {
 		"lore",
 		{
 			"It's squishy, like gelatin."
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Enemies bounce off of the top and bottom of the screen.",
+					"Enemies can now bounce into each other, dealing damage.",
+					"Your attacks knock enemies back."
+				}
+			}
 		}
 	}
 }
@@ -540,6 +857,12 @@ items.jar_of_eyeballs = {
 
 items.weird_mushroom = {
 	{
+		"data",
+		{
+			rarity = "legendary",
+		}
+	},
+	{
 		"name",
 		{
 			"Weird Mushroom"
@@ -549,6 +872,54 @@ items.weird_mushroom = {
 		"lore",
 		{
 			"Eat this to focus your brain!"
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"Every item pulled will be of a random rarity."
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"percent",
+					20
+				}
+			},
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"Enemy spawns are random."
+				}
+			},
+			{
+				"attack_speed",
+				{
+					"percent",
+					15
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"attack_speed",
+				{
+					"percent",
+					5
+				}
+			}
 		}
 	}
 }
@@ -565,6 +936,58 @@ items.wyrm = {
 		"lore",
 		{
 			"A juvenile wyrm. Its hiss is intimidating, but it's harmless."
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"bullet",
+				{
+					"On hit, poison enemies.",
+					"Sometimes, your shots can burst, coating nearby enemies in venom.",
+					"Poison ticks once every second for 10 damage.",
+					"Venom makes poison more painful, doubling its damage.",
+				}
+			},
+			{
+				"pierce",
+				{
+					"add",
+					1
+				}
+			}
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"bullet",
+				{
+					"On hit, poison enemies.",
+					"Poison ticks once every second for 10 damage."
+				}
+			},
+			{
+				"pierce",
+				{
+					"add",
+					1
+				}
+			}
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"pierce",
+				{
+					"add",
+					1
+				}
+			}
 		}
 	}
 }
@@ -629,7 +1052,7 @@ items.wood_block = {
 				"max_health",
 				{
 					"add",
-					50
+					150
 				}
 			}
 		}
@@ -641,7 +1064,7 @@ items.wood_block = {
 				"max_health",
 				{
 					"add",
-					25
+					75
 				}
 			}
 		}

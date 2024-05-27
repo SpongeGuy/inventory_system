@@ -38,7 +38,7 @@ Noggit Foot
 - Empty Jar
 Jar of Pickles
 - Jar of Eyeballs
-Wood Block
+- Wood Block
 Steel Block
 Galinstan
 Busket
@@ -103,6 +103,7 @@ Sacred Beard Hair
 Manufatured Aether Composite
 Transmogrification Nanobot
 Refining Nanobot
+Cloning Nanobot
 Oil Can
 Stirling Engine
 Aureate Staff
@@ -113,3 +114,4 @@ Enchanted Ukelele
 Blue Aurite
 Red Aurite
 Green Aurite
+Venom Fang

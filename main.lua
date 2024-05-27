@@ -72,6 +72,9 @@ local GLOBAL_ITEMS = {
 	wyrm = love.graphics.newImage("sprites/items/wyrm.png"),
 	subpocket = love.graphics.newImage("sprites/items/subpocket.png"),
 	wood_block = love.graphics.newImage("sprites/items/wood_block.png"),
+	quacker = love.graphics.newImage("sprites/items/quacker.png"),
+	toaster = love.graphics.newImage("sprites/items/toaster.png"),
+	placeholder = love.graphics.newImage("sprites/items/wood_block.png"),
 }
 
 function create_item(id, x, y, data)
@@ -130,7 +133,7 @@ end
 ---------------------------------------------------------
 
 -- player inventory origin coordinates
-p_inv_x = 300
+p_inv_x = 200
 p_inv_y = 100
 -- display box origin coordinates
 d_box = {
@@ -148,7 +151,7 @@ local player_inventory = {
 	{ uuid=utils.uuid(), x=p_inv_x, y=p_inv_y, xoff=0, yoff=0, id="inventory", mode="nonfunctional" },
 	{ uuid=utils.uuid(), x=p_inv_x+85, y=p_inv_y+8, xoff=85, yoff=8,  id="charbox2", mode="nonfunctional" }, 
 	{ uuid=utils.uuid(), x=p_inv_x+149, y=p_inv_y+8, xoff=149, yoff=8, id="bigslot2", mode="big_slot", }, 
-	{ uuid=utils.uuid(), x=p_inv_x+197, y=p_inv_y+8, xoff=197, yoff=8, id="bigslot1", mode="big_slot", },
+	{ uuid=utils.uuid(), xoff=197, yoff=8, id="bigslot1", mode="big_slot", },
 	{ uuid=utils.uuid(), x=p_inv_x+149, y=p_inv_y+56, xoff=149, yoff=56, id="slot1", mode="slot", },
 	{ uuid=utils.uuid(), x=p_inv_x+173, y=p_inv_y+56, xoff=173, yoff=56, id="slot1", mode="slot", }, 
 	{ uuid=utils.uuid(), x=p_inv_x+197, y=p_inv_y+56, xoff=197, yoff=56, id="slot1", mode="slot", }, 
@@ -181,7 +184,7 @@ function love.load()
 	table.insert(bagged_items, create_item("smorc_skull", 700, 120, items.smorc_skull))
 	table.insert(bagged_items, create_item("mangic_ingot", 720, 120, items.mangic_ingot))
 	table.insert(bagged_items, create_item("weezt_bulb", 740, 120, items.weezt_bulb))
-	table.insert(bagged_items, create_item("ring_of_barley", 760, 120, items.ring_of_barley))
+	table.insert(bagged_items, create_item("ring_of_barley", 820, 100, items.ring_of_barley))
 	table.insert(bagged_items, create_item("personal_wormhole", 700, 140, items.personal_wormhole))
 	table.insert(bagged_items, create_item("blast_gem", 720, 140, items.blast_gem))
 	table.insert(bagged_items, create_item("lil_gabbron", 720, 160, items.lil_gabbron))
@@ -194,6 +197,9 @@ function love.load()
 	table.insert(bagged_items, create_item("wyrm", 740, 100, items.wyrm))
 	table.insert(bagged_items, create_item("subpocket", 720, 100, items.subpocket))
 	table.insert(bagged_items, create_item("wood_block", 800, 100, items.wood_block))
+	table.insert(bagged_items, create_item("quacker", 820, 120, items.quacker))
+	table.insert(bagged_items, create_item("toaster", 820, 140, items.toaster))
+	table.insert(bagged_items, create_item("placeholder", 800, 40, items.sponge_with_wizard_hat))
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
