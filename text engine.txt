@@ -1,0 +1,168 @@
+text engine
+
+a player's stats are calculated from the base sheet.
+
+base_character_sheet = {
+	float attack_damage,
+    float minimum_attack_damage,
+    float maximum_attack_damage,
+    float max_health,
+    float health_regeneration,
+    float movement_speed,
+    float pierce,
+    float bounce,
+    float attack_speed,
+    float healing_power,
+    float critical_hit_chance,
+    float critical_hit_power,
+    float friend_damage,
+    float lifesteal,
+
+    int lil_gabbron,
+    int wizard_sponge,
+    int gangster_sponge,
+    int ant,
+    int bone_buddy,
+    int screeming_scamper,
+}
+
+items have stat modifiers, which take precedence in this order:
+	"add"
+	"percent"
+	"multiply"
+
+character_sheet = {
+	float attack_damage,
+    float minimum_attack_damage,
+    float maximum_attack_damage,
+    float max_health,
+    float health_regeneration,
+    float movement_speed,
+    float pierce,
+    float bounce,
+    float attack_speed,
+    float healing_power,
+    float critical_hit_chance,
+    float critical_hit_power,
+    float friend_damage,
+    float lifesteal,
+
+    -- friends
+    int lil_gabbron,
+    int wizard_sponge,
+    int gangster_sponge,
+    int ant,
+    int bone_buddy,
+    int screeming_scamper,
+}
+
+item = {
+	{
+		"data",
+		{
+			int id,
+			int rarity,
+			image image,
+			string designation,
+			string sound_type,
+			table item_effects,
+			table box_effects,
+		}
+	},
+	{
+		"text",
+		{
+			text_effects,
+			string,
+			text_effects,
+			string,
+			...
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"text",
+				{
+					text_effects,
+					string,
+					text_effects,
+					string,
+					...
+				}
+			},
+			{
+				"stat",
+				{
+					statistic,
+					"modifier",
+					int
+				}
+			}
+		}
+	}
+}
+
+box = {
+	
+}
+
+item_effects = {
+	int color,
+	shader shader,
+	string effect, --function(posx, posy, params) --this is for weird shit like spawn particles
+	int x_offset,
+	int y_offset,
+	int x_override,
+	int y_override,
+}
+
+text_effects = {
+	int color,
+	shader shader,
+	string transformation,
+	font font,
+	int x_offset,
+	int y_offset,
+	int x_override,
+	int y_override,
+}
+
+box_effects = {
+	int color,
+	shader shader,
+	string effect,
+	int x_offset,
+	int y_offset,
+	int x_override,
+	int y_override,
+}
+
+NOTHING SHOULD BE DONE IN AN UPDATE FUNCTION, IT SHOULD ALL BE IN A DRAW FUNCTION
+the only thing that should be in the update function are item stat changes or character sheet changes
+	this wouldn't just be in a standalone function either
+
+strings are not automatically newlines, they will only be newlines when designated with \n.
+	each string in the table will have to access the coordinates and width of the one before it
+	if a newline appears in a string, then idfk
+	i have to do experiments with text object to see how it works
+	but idk because i intend to use print because it's low on resources
+
+
+essential information
+ - item
+ - slot
+
+cut out the middleman and parse through the item data in the render function.
+once parsed, cache the information.
+	this can be done finely as long as transformation effects are referenced and not inline
+
+information to be cached
+ - item information
+ - box data
+ 	- width and height
+ 	- effects
+
+information to be updated every frame
+ - box coordinates
