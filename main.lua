@@ -1,7 +1,8 @@
 require 'modules/error_explorer'
 local anim8 = require ('modules/anim8')
 local push = require ('modules/push')
-local items = require("data/item_data")
+local items = require("data/items")
+local item_utils = require("data/item_utils")
 local utils = require("modules/utils")
 local shaders = require("data/shaders")
 local text_engine = require("modules/text_engine")
@@ -18,8 +19,6 @@ push:setupScreen(game_width, game_height, window_width, window_height, {windowed
 
 math.randomseed(os.time())
 
-
-
 local GRAPHICS = {
 	inventory = love.graphics.newImage("sprites/inventory/inv2.png"),
 	slot1 = love.graphics.newImage("sprites/inventory/slot1.png"),
@@ -29,6 +28,7 @@ local GRAPHICS = {
 	charbox2 = love.graphics.newImage("sprites/inventory/charbox2.png"),
 	selector = love.graphics.newImage("sprites/inventory/selector.png"),
 	hover = love.graphics.newImage("sprites/inventory/hover.png"),
+	hover_big = love.graphics.newImage("sprites/inventory/hover_big.png"),
 }
 
 local GRAPHICS_DATA = {
@@ -40,6 +40,7 @@ local GRAPHICS_DATA = {
 	charbox2 = love.image.newImageData("sprites/inventory/charbox2.png"),
 	selector = love.image.newImageData("sprites/inventory/selector.png"),
 	hover = love.image.newImageData("sprites/inventory/hover.png"),
+	hover_big = love.image.newImageData("sprites/inventory/hover_big.png"),
 }
 
 local DATA_TEXT_COLORS = {
@@ -54,34 +55,17 @@ local DATA_TEXT_COLORS = {
 	description = utils.get_color_table_from_rgb(111, 147, 237),
 }
 
-local GLOBAL_ITEMS = {
-	-- all items must receive uuid and data upon creation
-	smorc_skull = love.graphics.newImage("sprites/items/smorc_skull.png"),
-	mangic_ingot = love.graphics.newImage("sprites/items/mangic_ingot.png"),
-	personal_wormhole = love.graphics.newImage("sprites/items/personal_wormhole.png"),
-	ring_of_barley = love.graphics.newImage("sprites/items/ring_of_barley.png"),
-	blast_gem = love.graphics.newImage("sprites/items/blast_gem.png"),
-	weezt_bulb = love.graphics.newImage("sprites/items/weezt_bulb.png"),
-	lil_gabbron = love.graphics.newImage("sprites/items/lil_gabbron.png"),
-	jugg_milk_carton = love.graphics.newImage("sprites/items/jugg_milk_carton.png"),
-	pink_plasmid = love.graphics.newImage("sprites/items/pink_plasmid.png"),
-	blue_plasmid = love.graphics.newImage("sprites/items/blue_plasmid.png"),
-	empty_jar = love.graphics.newImage("sprites/items/empty_jar.png"),
-	jar_of_eyeballs = love.graphics.newImage("sprites/items/jar_of_eyeballs.png"),
-	weird_mushroom = love.graphics.newImage("sprites/items/weird_mushroom.png"),
-	wyrm = love.graphics.newImage("sprites/items/wyrm.png"),
-	subpocket = love.graphics.newImage("sprites/items/subpocket.png"),
-	wood_block = love.graphics.newImage("sprites/items/wood_block.png"),
-	quacker = love.graphics.newImage("sprites/items/quacker.png"),
-	toaster = love.graphics.newImage("sprites/items/toaster.png"),
-	placeholder = love.graphics.newImage("sprites/items/wood_block.png"),
-}
-
 function create_item(id, x, y, data)
 	local item = {}
-	item.image = GLOBAL_ITEMS[id]
+	item.image = data[1][2].image
 	item.x = x
 	item.y = y
+	item.w = 0
+	item.h = 0
+	if item.image then
+		item.w = item.image:getWidth()
+		item.h = item.image:getHeight()
+	end
 	item.snap_x = x
 	item.snap_y = y
 	item.storage_x = x
@@ -133,8 +117,8 @@ end
 ---------------------------------------------------------
 
 -- player inventory origin coordinates
-p_inv_x = 200
-p_inv_y = 100
+p_inv_x = 330
+p_inv_y = 22
 -- display box origin coordinates
 d_box = {
 	x = 0,
@@ -177,35 +161,49 @@ local loaded_objects = {
 local particles = {}
 local shockwaves = {}
 
+local menu_item_x = 615
+local menu_item_y = 22
+
+function debug_spawn_item(item_id, column, row, item_data)
+	table.insert(bagged_items, create_item(item_id, column * 22, row * 22, item_data))
+end
+
+function debug_spawn_item(item_id, item_data)
+	table.insert(bagged_items, create_item(item_id, menu_item_x, menu_item_y, item_data))
+	menu_item_x = menu_item_x + 22
+	if menu_item_x > game_width - 140 then
+		menu_item_x = 615
+		menu_item_y = menu_item_y + 22
+	end
+	
+end
+
+
 
 function love.load()
 	text_engine.initialize_box_data(game_width, game_height)
 
-	table.insert(bagged_items, create_item("smorc_skull", 700, 120, items.smorc_skull))
-	table.insert(bagged_items, create_item("mangic_ingot", 720, 120, items.mangic_ingot))
-	table.insert(bagged_items, create_item("weezt_bulb", 740, 120, items.weezt_bulb))
-	table.insert(bagged_items, create_item("ring_of_barley", 820, 100, items.ring_of_barley))
-	table.insert(bagged_items, create_item("personal_wormhole", 700, 140, items.personal_wormhole))
-	table.insert(bagged_items, create_item("blast_gem", 720, 140, items.blast_gem))
-	table.insert(bagged_items, create_item("lil_gabbron", 720, 160, items.lil_gabbron))
-	table.insert(bagged_items, create_item("jugg_milk_carton", 720, 180, items.jugg_milk_carton))
-	table.insert(bagged_items, create_item("pink_plasmid", 720, 200, items.pink_plasmid))
-	table.insert(bagged_items, create_item("blue_plasmid", 740, 200, items.blue_plasmid))
-	table.insert(bagged_items, create_item("empty_jar", 780, 120, items.empty_jar))
-	table.insert(bagged_items, create_item("jar_of_eyeballs", 780, 140, items.jar_of_eyeballs))
-	table.insert(bagged_items, create_item("weird_mushroom", 760, 100, items.weird_mushroom))
-	table.insert(bagged_items, create_item("wyrm", 740, 100, items.wyrm))
-	table.insert(bagged_items, create_item("subpocket", 720, 100, items.subpocket))
-	table.insert(bagged_items, create_item("wood_block", 800, 100, items.wood_block))
-	table.insert(bagged_items, create_item("quacker", 820, 120, items.quacker))
-	table.insert(bagged_items, create_item("toaster", 820, 140, items.toaster))
-	table.insert(bagged_items, create_item("placeholder", 800, 40, items.sponge_with_wizard_hat))
+	-- spawn items
+	local temp = {}
+	for name, data in pairs(items) do
+		local id = data[1][2].id
+		table.insert(temp, {id = id, name = name, data = data})
+	end
+
+	table.sort(temp, function(a, b) return a.id < b.id end)
+
+	for _, item in ipairs(temp) do
+		debug_spawn_item(item.name, item.data)
+	end
+
+	
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
 	local c_x = x / window_scale
 	local c_y = y / window_scale
 	if hover_item_uuid then return end
+	-- weirdo particle effects when clicking the inventory
 	for i = #player_inventory, 1, -1 do
 		local slot = player_inventory[i]
 		local graphic = GRAPHICS[slot.id]
@@ -229,7 +227,6 @@ function love.mousepressed(x, y, button, istouch, presses)
 end
 
 function love.update(dt)
-	send_shit_to_shaders()
 	fps = love.timer.getFPS()
 	m_x = love.mouse.getX() / window_scale
 	m_y = love.mouse.getY() / window_scale
@@ -241,7 +238,7 @@ function love.update(dt)
 	for i = 1, #bagged_items do
 		local item = bagged_items[i]
 		hover_item_uuid = nil
-		if utils.get_point_collision(m_x, m_y, item.x, item.y, item.image:getWidth(), item.image:getHeight()) then
+		if utils.get_point_collision(m_x, m_y, item.x, item.y, item.w, item.h) then
 			hover_item_uuid = item.uuid
 			break
 		end
@@ -340,9 +337,9 @@ function love.draw()
 		-- if item is being held, then render it on top of inventory (instead of in between it) and scale it up a bit for AESTHETIC
 		for i = 1, #bagged_items do
 			local item = bagged_items[i]
-			if item.uuid == held_item_uuid then
+			if item.uuid == held_item_uuid and item.image then
 				love.graphics.draw(item.image, math.floor(item.x) - 3, math.floor(item.y) - 3, 0, 1.35, 1.35)
-			elseif not item.slot_uuid then
+			elseif not item.slot_uuid and item.image then
 				love.graphics.draw(item.image, math.floor(item.x), math.floor(item.y))
 			end
 		end
@@ -423,7 +420,7 @@ function love.mousereleased(x, y, button)
 					local graphic = GRAPHICS[slot.id]
 					if utils.get_point_collision(m_x, m_y, slot.x, slot.y, graphic:getWidth(), graphic:getHeight()) then
 						out_of_bounds = false
-						if slot.mode == items.SLOT_CATEGORIES[slot.mode] then
+						if slot.mode == item_utils.SLOT_CATEGORIES[slot.mode] then
 							slotted = true
 						end
 						break
@@ -477,17 +474,12 @@ function love.mousereleased(x, y, button)
 	end
 end
 
-function send_shit_to_shaders()
-    -- this has to be called within update function
-    shaders.rainbow_shader:send("time", love.timer.getTime() * 50)
-    shaders.scrolling_rainbow_shader:send("time", love.timer.getTime() * 50)
-    shaders.demo_shader:send("screen", {game_width, game_height})
-end
+
 
 function hold_item()
 	for i = 1, #bagged_items do
 		local item = bagged_items[i]
-		if utils.get_point_collision(m_x, m_y, item.x, item.y, item.image:getWidth(), item.image:getHeight()) and not held_item_uuid then
+		if utils.get_point_collision(m_x, m_y, item.x, item.y, item.w, item.h) and not held_item_uuid then
 			held_item_uuid = item.uuid
 			love.mouse.setVisible(false)
 		end
@@ -544,8 +536,12 @@ function draw_player_inventory()
 		if utils.get_point_collision(m_x, m_y, slot.x, slot.y, graphic:getWidth(), graphic:getHeight()) then
 			local hover
 			love.graphics.setColor(255, 255, 255, 0.35)
-			if slot.mode == "area" and not held_item_uuid then
-				hover = GRAPHICS["hover"]
+			if slot.mode == "area" then
+				if held_item_uuid then
+					hover = GRAPHICS["hover_big"]
+				else
+					hover = GRAPHICS["hover"]
+				end
 				love.graphics.draw(hover, math.floor(m_x - hover:getWidth() / 2), math.floor(m_y - hover:getHeight() / 2))
 			elseif slot.mode == "slot" or slot.mode == "big_slot" then
 				hover = GRAPHICS["selector"]

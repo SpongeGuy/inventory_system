@@ -1,6 +1,8 @@
+local start_m = love.timer.getTime()
+
 local shaders = {}
 
-shaders.shiny_shader = love.graphics.newShader[[
+shaders.reflective = love.graphics.newShader[[
     extern vec2 displacement = vec2(0.001, 0.001);
 
     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
@@ -16,14 +18,14 @@ shaders.shiny_shader = love.graphics.newShader[[
     }
 ]]
 
-shaders.yellow_shader = love.graphics.newShader[[
+shaders.yellow = love.graphics.newShader[[
     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
     {
         return vec4(1.0, 1.0, 0, 1.0);
     }
 ]]
 
-shaders.pulse_shader = love.graphics.newShader[[
+shaders.pulse = love.graphics.newShader[[
 
 	uniform float time;
 
@@ -37,7 +39,7 @@ shaders.pulse_shader = love.graphics.newShader[[
     }
 ]]
 
-shaders.bounce_shader = love.graphics.newShader[[
+shaders.bounce = love.graphics.newShader[[
     extern float time;
 
     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
@@ -55,6 +57,77 @@ shaders.bounce_shader = love.graphics.newShader[[
     }
 ]]
 
+shaders.ripple = love.graphics.newShader[[
+    extern float time;
+    
+    vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords) {
+        // Calculate wave displacement
+        float waveDisplacement = sin(uvs.x * 5.0 + time) * 0.015;
+        
+        // Apply wave displacement to y-coordinate
+        vec2 displacedUVs = vec2(uvs.x, uvs.y + waveDisplacement);
+        
+        // Sample the texture with displaced UVs
+        vec4 texColor = Texel(texture, displacedUVs);
+        
+        // Return the final color
+        vec4 pixel = Texel(texture, uvs);
+        if (pixel.a < 0.01) {
+            return vec4(0.0);
+        } else {
+            return vec4(color.rgb, texColor.a);
+        }
+        
+    }
+]]
+
+shaders.shimmer = love.graphics.newShader[[
+    extern float time;
+
+    vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords) {
+        // Sample the texture normally
+        vec4 texColor = Texel(texture, uvs);
+
+        // Calculate brightness modulation based on time and screen position
+        float brightnessModulation1 = 5 * sin(screen_coords.x / 100.0 + screen_coords.y / 100.0 + time) + 5.35;
+
+        // Apply brightness modulation to the color
+        vec3 modulatedColor = texColor.rgb * clamp(brightnessModulation1, 0.0, 1.0);
+
+        vec3 finalColor = 1 / modulatedColor * color.rgb;
+
+        // Ensure the color stays within valid range
+        vec3 clampedColor = clamp(finalColor, 0.0, 1.0);
+
+        // Return the final color
+        return vec4(clampedColor, texColor.a);
+    }
+]]
+
+shaders.corrupt = love.graphics.newShader[[
+    extern float time;
+    
+    vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords) {
+        // Calculate wave displacement
+        float waveDisplacement = sin(uvs.x * 100.0 + time) * 0.05;
+        
+        // Apply wave displacement to y-coordinate
+        vec2 displacedUVs = vec2(uvs.x, uvs.y + waveDisplacement);
+        
+        // Sample the texture with displaced UVs
+        vec4 texColor = Texel(texture, displacedUVs);
+        
+        // Brighten the color
+        float brightness = 1.5; // Adjust this value to control the brightness level
+        vec3 brightenedColor = clamp(texColor.rgb * brightness, 0.0, 1.0);
+        
+        // Return the final color
+        vec4 pixel = Texel(texture, uvs);
+        return vec4(brightenedColor, texColor.a);
+        
+    }
+]]
+
 shaders.demo_shader = love.graphics.newShader[[
     extern vec2 screen;
         
@@ -66,7 +139,7 @@ shaders.demo_shader = love.graphics.newShader[[
     }
 ]]
 
-shaders.rainbow_shader = love.graphics.newShader[[
+shaders.rainbow = love.graphics.newShader[[
     extern float time;
 
     vec3 hsv_to_rgb(float h, float s, float v) {
@@ -112,7 +185,7 @@ shaders.rainbow_shader = love.graphics.newShader[[
     }
 ]]
 
-shaders.scrolling_rainbow_shader = love.graphics.newShader[[
+shaders.scrolling_rainbow = love.graphics.newShader[[
     extern float time;
     uniform float color_spread = 1;
     uniform float scroll_speed = 1;
@@ -160,7 +233,7 @@ shaders.scrolling_rainbow_shader = love.graphics.newShader[[
     }
 ]]
 
-shaders.fade_shader = love.graphics.newShader[[
+shaders.fade = love.graphics.newShader[[
 
 	uniform float time;
 	uniform float fadeout_duration = 1;
@@ -188,4 +261,7 @@ shaders.fade_shader = love.graphics.newShader[[
     }
 ]]
 
+
+local result_m = love.timer.getTime() - start_m
+print(string.format("Shaders loaded in %.3f milliseconds!", result_m * 1000))
 return shaders

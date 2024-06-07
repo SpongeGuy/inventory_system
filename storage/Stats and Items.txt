@@ -1,23 +1,10 @@
-Stats and Items
-
-Statistics
-
- - max health
- - health regeneration
- - shield
- - armor
- - armor toughness
- - armor penetration
- - attack damage
- - attack speed
- - movement speed
- - luck
-
-
 Special Statistics
 
- - charge time
- - special attack delay
+visual tooltip effects
+- color
+- shader
+- coordinate transformation
+- number of box outlines
 
 
 
@@ -60,9 +47,9 @@ Blue Crystal
 Neoplasmin Nugget
 Vial of Ichor
 Rusty Nail
-Rusty Coin
-Old Cross
-Gold Stainless Nail
+- Rusty Coin
+- Old Cross
+- Gold Stainless Nail
 Milk of Paradise
 Honeydew
 Tower Brick
@@ -73,8 +60,8 @@ Cord of Life
 Pillp Tentacle
 Emelet
 Oronc Totem
-Redge Totem
-Redge Spear
+Titon Totem
+Titon Spear
 - Subpocket
 Flesh Wallet
 Plasmid
@@ -110,8 +97,14 @@ Aureate Staff
 Sky Shard
 1984 Lamborghini Countach LP500 S
 Table Salt
-Enchanted Ukelele
+- Enchanted Ukelele
 Blue Aurite
 Red Aurite
 Green Aurite
 Venom Fang
+- Midas Chip
+Honeycomb
+Wasp
+Queen Wasp
+Honey Pot
+Thiss (mushroom)

@@ -1,8 +1,12 @@
+local start_m = love.timer.getTime()
+
 local utils = {}
 
 math.randomseed(os.time())
 
-utils.colors_DB32 = {
+
+-- DB32 color palette
+utils.colors = {
     {0, 0, 0}, 			--  1; black
     {34, 32, 52},		--  2; dark purple
     {69, 40, 60},		--  3; deep magenta
@@ -34,7 +38,12 @@ utils.colors_DB32 = {
     {217, 87, 99},		-- 29; salmon
     {215, 123, 186},	-- 30; bright pink
     {143, 151, 74},		-- 31; greenish yellow
-    {138, 111, 48}		-- 32; dark beige
+    {138, 111, 48},		-- 32; dark beige
+}
+
+utils.fonts = {
+    love.graphics.newFont("font/nokiafc22.ttf", 8),
+    love.graphics.newFont("font/bmmini.ttf", 8),
 }
 
 -- returns randomly seeded uuid
@@ -165,4 +174,6 @@ function utils.deep_print_table(tbl, indent)
     end
 end
 
+local result_m = love.timer.getTime() - start_m
+print(string.format("Utils loaded in %.3f milliseconds!", result_m * 1000))
 return utils
