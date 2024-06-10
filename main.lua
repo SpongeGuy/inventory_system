@@ -18,8 +18,11 @@ push:setupScreen(game_width, game_height, window_width, window_height, {windowed
 
 
 -- parameters
-local designation_goggles = false
-local debug_id_see = true
+local show_designation = true
+local show_rarity = true
+local show_bullets = true
+local debug_id_see = false
+local debug_showall = true
 
 
 local base_character_sheet = {
@@ -86,7 +89,195 @@ local character_sheet = {
 -- / effects parameters
 -- int amount
 
-local item = {
+
+local item_nail = {
+	{
+		"data",
+		{
+			id = 53,
+			rarity = 5,
+			image = nil,
+			soundfont = "metal",
+			box_line_effects = {
+				color = 6,
+				shader = shaders.shimmer,
+			},
+			box_back_effects = {
+				color = 6,
+			}
+		}
+	},
+	{
+		"text",
+		{
+			{
+				color = 6,
+				shader = shaders.shimmer,
+				padding_x = 60,
+				offset_y = 0,
+			},
+			"Gold Stainless Nail",
+		}
+	},
+	{
+		"text",
+		{
+			{
+				color = 10,
+				font = 2,
+			},
+			"It's been torn through the distance of man."
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"text",
+				{
+					{
+						color = 22,
+						font = 2,
+					},
+					"Pure freedom."
+				}
+			},
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"§- Gain a buff on hit which swaps the values of your \n   minimum and maximum attack damage.",
+					{
+						color = 10,
+						offset_x = -40,
+					},
+					-- modify the font to have an hourglass symbol and directional arrows
+					"[Dur. 00:07]  ",
+					{
+						color = 12,
+						offset_x = -40,
+					},
+					"[Cd. 00:10]"
+				}
+			},
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"- Enemies under the reign of a powerful force reject purity, becoming friendly."
+				}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					-2
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					200
+				}
+			},
+			{
+				"stat",
+				{
+					"critical_hit_chance",
+					"add",
+					45
+				}
+			},
+			{
+				"stat",
+				{
+					"critical_hit_power",
+					"add",
+					25
+				}
+			},
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"text",
+				{
+					{
+						color = 22,
+						font = 2,
+					},
+					"Secrets are still held from you."
+				}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					1.5
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					100
+				}
+			},
+		}
+	},
+	{
+		"area",
+		{
+			{
+				"text",
+				{
+					{
+						color = 22,
+						font = 1,
+					},
+					"Going through the motions..."
+				}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					1.2
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					20
+				}
+			},
+			{
+				"stat",
+				{
+					"healing_power",
+					"add",
+					10
+				}
+			},
+		}
+	}
+}
+
+local item_torsionator = {
 	{
 		"data",
 		{
@@ -300,17 +491,7 @@ function print_table_in_order(tbl, ordered_keys, x, y)
 	end
 end
 
--- init variables
-
-local master_x = 0
-local master_y = 0
-
-local offset_x = 0
-local offset_y = 0
-
-local padding_y = 0
-
-function debug_print(str, x, y)
+function visual_print(str, x, y)
 	love.graphics.print(tostring(str), x, y)
 end
 
@@ -333,60 +514,6 @@ function send_to_shaders()
 	shaders.blink:send("time", love.timer.getTime())
 end
 
-function reset_effects()
-	set_draw_color(22)
-	love.graphics.setShader()
-	love.graphics.setFont(utils.fonts[1])
-end
-
-function reset_values()
-	offset_x = 0
-	offset_y = 0
-	padding_y = 0
-end
-
-local transformation_handlers = {
-	["circle"] = function(x, y, radius, speed)
-        x = x + (math.sin(love.timer.getTime() * speed) * radius)
-        y = y + (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
-        return x, y
-    end,
-    ["bounce"] = function(x, y, intensity, speed)
-        x = x
-        y = y + -math.abs(math.sin(love.timer.getTime() * speed) * intensity)
-        return x, y
-    end,
-    ["displace"] = function(x, y, dx, dy)
-        x = x + dx
-        y = y + dy
-        return x, y
-    end,
-}
-
-local effect_handlers = {
-	["color"] = function(int)
-		set_draw_color(int)
-	end,
-	["shader"] = function(shader)
-		love.graphics.setShader(shader)
-	end,
-	["transformation"] = function()
-	end,
-	["font"] = function(int)
-		love.graphics.setFont(utils.fonts[int])
-	end,
-	["padding_y"] = function(int)
-		padding_y = int
-	end,
-	["offset_x"] = function(int)
-		offset_x = int
-	end,
-	["offset_y"] = function(int)
-		offset_y = int
-	end,
-}
-
-
 function count_newlines(input)
 	if type(input) ~= 'string' then
 		return
@@ -395,12 +522,93 @@ function count_newlines(input)
     return cleaned_string, section_sign_count
 end
 
-function draw_item_box(item, posx, posy)
+function draw_item_box(item, slot, posx, posy)
 	local start = love.timer.getTime()
+
+	local transformation_handlers = {
+		["circle"] = function(x, y, radius, speed, pi_offset)
+	        x = x + (math.sin(love.timer.getTime() * speed) * radius)
+	        y = y + (math.sin(love.timer.getTime() * speed + (math.pi / 2 + pi_offset)) * radius)
+	        return x, y
+	    end,
+	    ["bounce"] = function(x, y, intensity, speed)
+	        x = x
+	        y = y + -math.abs(math.sin(love.timer.getTime() * speed) * intensity)
+	        return x, y
+	    end,
+	    ["displace"] = function(x, y, dx, dy)
+	        x = x + dx
+	        y = y + dy
+	        return x, y
+	    end,
+	    ["random_displace"] = function(x, y, mx, my)
+	    	x = x + math.random(-mx, mx)
+	    	y = y + math.random(-my, my)
+	    	return x, y
+		end,
+	}
+
+	
+
+	-- init variables
+
+	local master_x = 0
+	local master_y = 0
+
+	local offset_x = 0
+	local offset_y = 0
+
+	local padding_x = 0
+	local padding_y = 0
+
+	function reset_effects()
+		set_draw_color(22)
+		love.graphics.setShader()
+		love.graphics.setFont(utils.fonts[1])
+	end
+
+	function reset_values()
+		offset_x = 0
+		offset_y = 0
+		padding_y = 0
+		padding_x = 0
+	end
+
+	local effect_handlers = {
+		["color"] = function(int)
+			set_draw_color(int)
+		end,
+		["shader"] = function(shader)
+			love.graphics.setShader(shader)
+		end,
+		["transformation"] = function()
+		end,
+		["font"] = function(int)
+			love.graphics.setFont(utils.fonts[int])
+		end,
+		["padding_x"] = function(int)
+			padding_x = int
+		end,
+		["padding_y"] = function(int)
+			padding_y = int
+		end,
+		["offset_x"] = function(int)
+			offset_x = int
+		end,
+		["offset_y"] = function(int)
+			offset_y = int
+		end,
+	}
+
+	local item_data = item.data
+	local slot_mode = "default"
+	if item.slot_uuid == slot.uuid then
+		slot_mode = slot.mode
+	end
 
 	local master_offset = 25
 
-	local item_universal_data = item[1][2]
+	local item_universal_data = item_data[1][2]
 
 	local origin_x = posx + master_offset
 	local origin_y = posy + master_offset
@@ -413,10 +621,13 @@ function draw_item_box(item, posx, posy)
 	local text_shadow = true
 
 	local function print_text_shadow(str, x, y)
+		local shader = love.graphics.getShader()
+		love.graphics.setShader()
 		local r, g, b, a = love.graphics.getColor()
 		set_draw_color(1)
-		debug_print(str, x, y)
+		visual_print(str, x, y)
 		love.graphics.setColor(r, g, b, a)
+		love.graphics.setShader(shader)
 	end
 	
 
@@ -424,11 +635,17 @@ function draw_item_box(item, posx, posy)
 		if #data % 2 == 1 then
 			error("text_effects defined without following string at item_data index " .. index .. ": " .. tostring(base_entry_key))
 		end
+		local str = ""
+		local newline_count = 0
+		local accum_padding_y = 0
+		local accum_newline_count = 1
+		local print_x = math.floor(master_x + offset_x)
+		local print_y = math.floor(master_y + offset_y)
 		for i, e in ipairs(data) do
 			-- handle this shit on groups 2 at a time
 			if i % 2 == 1 then
 				local text_effects = data[i]
-				local str, newline_count = count_newlines(data[i + 1])
+				str, newline_count = count_newlines(data[i + 1])
 				
 				for category, value in pairs(text_effects) do
 					local handler = effect_handlers[category]
@@ -438,29 +655,42 @@ function draw_item_box(item, posx, posy)
 				end
 
 				last_font_used = love.graphics.getFont()
-
-				local print_x = math.floor(master_x + offset_x)
-				local print_y = math.floor(master_y + offset_y)
+				accum_padding_y = accum_padding_y + padding_y
+				accum_newline_count = accum_newline_count + newline_count
 
 				if text_effects["align"] and text_effects["align"] == "right" then
 					print_x = math.floor(origin_x + box_width - last_font_used:getWidth(str) + offset_x)
 				elseif text_effects["align"] and text_effects["align"] == "center" then
 					print_x = math.floor(origin_x + (box_width / 2) - math.floor(last_font_used:getWidth(str) / 2) + offset_x)
 				end
-				
-				if text_shadow then
-					print_text_shadow(str, print_x + 1, print_y + 1)
+				print_x = print_x + offset_x
+
+				-- transformation effects
+				local mod_x = print_x
+				local mod_y = print_y
+				for category, value in pairs(text_effects) do
+					local handler = transformation_handlers[category]
+					print(category)
+					if handler then
+						mod_x, mod_y = handler(mod_x, mod_y, value[1], value[2], value[3])
+					end
 				end
+
+				if text_shadow then
+					print_text_shadow(str, mod_x + 1, mod_y + 1)
+				end
+				visual_print(str, mod_x, mod_y)
+				print_y = print_y + last_font_used:getHeight(".") * newline_count
 				
-				
-				debug_print(str, print_x, print_y)
-				master_y = master_y + last_font_used:getHeight(str) * (newline_count) + padding_y
-				master_x = master_x + last_font_used:getWidth(str)
+				master_x = master_x + last_font_used:getWidth(str) + padding_x
 				reset_effects()
 				reset_values()
+				print_x = math.floor(master_x)
 			end
-
 		end
+		--print(master_y, last_font_used:getHeight(str), accum_newline_count, accum_padding_y)
+		master_y = master_y + last_font_used:getHeight(str) * (accum_newline_count) + accum_padding_y
+		return str
 	end
 
 	local function parse_text_dims(key, data)
@@ -468,11 +698,15 @@ function draw_item_box(item, posx, posy)
 			error("text_effects defined without following string at item_data index " .. index .. ": " .. tostring(base_entry_key))
 		end
 		local temp_width = 0
+		local str = ""
+		local newline_count = 0
+		local accum_padding_y = 0
+		local accum_newline_count = 1
 		for i, e in ipairs(data) do
 			-- handle this shit on groups 2 at a time
 			if i % 2 == 1 then
 				local text_effects = data[i]
-				local str, newline_count = count_newlines(data[i + 1])
+				str, newline_count = count_newlines(data[i + 1])
 				for category, value in pairs(text_effects) do
 					local handler = effect_handlers[category]
 					if handler then
@@ -480,52 +714,61 @@ function draw_item_box(item, posx, posy)
 					end
 				end
 				last_font_used = love.graphics.getFont()
-				temp_width = temp_width + last_font_used:getWidth(str) + offset_x
-				temp_padding_y = padding_y
+				temp_width = temp_width + last_font_used:getWidth(str) + offset_x + padding_x
+				accum_padding_y = accum_padding_y + padding_y
 				reset_effects()
+				accum_newline_count = accum_newline_count + newline_count
+				reset_values()
+
 			end
 		end
-		box_height = box_height + last_font_used:getHeight("hi") + temp_padding_y + offset_y
+		box_height = box_height + last_font_used:getHeight("hi") * (accum_newline_count) + accum_padding_y + offset_y
 
 		if temp_width > box_width then
 			box_width = temp_width
 		end
+		reset_effects()
 		reset_values()
+		last_font_used = utils.fonts[1]
+		return str
 	end
 
-	local function parse_stat_print(key, data, printing)
+	local function parse_stat_print(key, data)
 		local str = ""
 		local stat = data[1]
 		local modifier = data[2]
 		local value = data[3]
+		local abs_value = math.abs(data[3])
 		local active_font = love.graphics.getFont()
 
 		last_font_used = love.graphics.getFont()
-		master_y = master_y + last_font_used:getHeight("hi")
-
 		
 
+		
 		local str_modifier = ""
 		local str_value = ""
 		local str_percent = ""
 		local str_statname = ""
 		
-		if modifier == "add" and value > 0 then
-			str_modifier = "+"
-			str = str .. str_modifier
-			
-		elseif modifier == "percent" and value > 0 then
-			str_modifier = "+"
+		if modifier == "add" or modifier == "percent" then
+			if value >= 0 then
+				str_modifier = "+"
+			else
+				str_modifier = "-"
+			end
 			str = str .. str_modifier
 			
 		elseif modifier == "multiply" then
-			str_modifier = "x"
+			if value >= 0 then
+				str_modifier = "x"
+			else
+				str_modifier = "x -"
+			end
 			str = str .. str_modifier
-			
 		end
 		
 		-- print value
-		str_value = tostring(value)
+		str_value = tostring(abs_value)
 		str = str .. str_value
 		
 		
@@ -545,33 +788,32 @@ function draw_item_box(item, posx, posy)
 
 		print_text_shadow(str, math.floor(master_x + offset_x) + 1, math.floor(master_y) + 1)
 
-		-- conditionally set color
-		if value < 0 then
-			set_draw_color(28)
-		else
-			set_draw_color(17)
-		end
+		set_draw_color(22)
 		
 
 		-- print everything
-		debug_print(str_modifier, math.floor(master_x + offset_x), math.floor(master_y))
+		visual_print(str_modifier, math.floor(master_x + offset_x), math.floor(master_y))
 		master_x = master_x + active_font:getWidth(str_modifier)
-		debug_print(str_value, math.floor(master_x + offset_x), math.floor(master_y))
+		set_draw_color(9)
+		
+		visual_print(str_value, math.floor(master_x + offset_x), math.floor(master_y))
 		master_x = master_x + active_font:getWidth(str_value)
-		debug_print(str_percent, math.floor(master_x + offset_x), math.floor(master_y))
+		set_draw_color(22)
+		visual_print(str_percent, math.floor(master_x + offset_x), math.floor(master_y))
 		master_x = master_x + active_font:getWidth(str_percent)
-		debug_print(str_statname, math.floor(master_x + offset_x), math.floor(master_y))
+		visual_print(str_statname, math.floor(master_x + offset_x), math.floor(master_y))
 		master_x = master_x + active_font:getWidth(str_statname)
 
 		local handler = effect_handlers["offset_x"]
 		handler(0)
-
-		-- i dont know why these have to be in this order here :/
 		
-		--debug_print(str, math.floor(master_x + offset_x), math.floor(master_y))
+		--visual_print(str, math.floor(master_x + offset_x), math.floor(master_y))
 		reset_effects()
 		reset_values()
+		master_y = master_y + last_font_used:getHeight("hi")
 	end
+
+	local temp = 1
 
 	local function parse_stat_dims(key, data)
 		local str = ""
@@ -600,22 +842,28 @@ function draw_item_box(item, posx, posy)
 	-- fix this
 	-- make string and find width of string
 	local function find_box_dims()
-		for index, base_entry in ipairs(item) do
+		for index, base_entry in ipairs(item_data) do
 			local base_entry_key = base_entry[1]
 			local base_entry_data = base_entry[2]
 			if base_entry_key == "text" then
-				parse_text_dims(base_entry_key, base_entry_data)
+				local last_text_str = parse_text_dims(base_entry_key, base_entry_data)
 				if index == 2 then
-					if designation_goggles then
+					if show_designation and item_universal_data["designation"] then
 						box_height = box_height + last_font_used:getHeight(".")
 					end
 				end
 				
 			elseif base_entry_key == "stat" then
 				parse_stat_dims(base_entry_key, base_entry_data)
-			elseif base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] then
+			elseif 
+				base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and slot_mode == base_entry_key or
+				base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and debug_showall 
+				then
+				last_font_used = utils.fonts[1]
 				box_height = box_height + last_font_used:getHeight("hi") + slot_padding_y
-				for _, entry in ipairs(base_entry_data) do
+				reset_effects()
+				reset_values()
+				for subindex, entry in ipairs(base_entry_data) do
 					local entry_key = entry[1]
 					local entry_data = entry[2]
 					if entry_key == "text" then
@@ -634,6 +882,8 @@ function draw_item_box(item, posx, posy)
 	send_to_shaders()
 	reset_effects()
 	find_box_dims()
+
+	-- display box
 
 	if origin_x + box_width > game_width then
 		origin_x = origin_x - box_width - master_offset * 2
@@ -665,7 +915,7 @@ function draw_item_box(item, posx, posy)
 			math.floor(origin_x) - 0.5 - temp_box_padding, 
 			math.floor(origin_y) - 0.5 - temp_box_padding, 
 			math.floor(box_width + (temp_box_padding * 2)), 
-			math.floor(box_height + (temp_box_padding * 2) + 3)
+			math.floor(box_height + (temp_box_padding * 2) + 0)
 		)
 		temp_box_padding = temp_box_padding + 2
 	end
@@ -677,18 +927,20 @@ function draw_item_box(item, posx, posy)
 		handler(value)
 	end
 	local r, g, b = love.graphics.getColor()
-	love.graphics.setColor(r, g, b, 0.5)
+	love.graphics.setColor(r, g, b, 0.55)
 	love.graphics.rectangle(
 		'fill', 
 		math.floor(origin_x) - 0.5 - box_padding, 
 		math.floor(origin_y) - 0.5 - box_padding, 
 		math.floor(box_width + (box_padding * 2.5)), 
-		math.floor(box_height + (box_padding * 2.5) + 3)
+		math.floor(box_height + (box_padding * 2.5) + 0)
 	)
 
+	
+	-- print stuff
 	master_y = origin_y
 
-	for index, base_entry in ipairs(item) do
+	for index, base_entry in ipairs(item_data) do
 		master_x = origin_x
 		local base_entry_key = base_entry[1]
 		local base_entry_data = base_entry[2]
@@ -698,60 +950,100 @@ function draw_item_box(item, posx, posy)
 		end
 
 		if base_entry_key == "text" then
-			parse_text_print(base_entry_key, base_entry_data)
+			local last_text_str = parse_text_print(base_entry_key, base_entry_data)
 			if index == 2 then
 				-- display item id
-				debug_print(item_universal_data["id"], math.floor(master_x), math.floor(master_y))
+				if debug_id_see then
+					local id_text = item_universal_data["id"]
+					visual_print(id_text, math.floor(origin_x + box_width - last_font_used:getWidth(id_text)), math.floor(origin_y + last_font_used:getHeight('.')))
+				end
 
 				master_x = origin_x
-
 			
 				-- display rarity
-				local rarity_value = item_universal_data["rarity"]
-				local str = utils.parse_descriptive_key(item_utils.RARITIES[rarity_value][1])
-				local print_x = math.floor(origin_x + box_width - last_font_used:getWidth(str))
-				print_text_shadow(str, math.floor(print_x + 1), math.floor(master_y + 1))
-				set_draw_color(item_utils.RARITIES[rarity_value][2])
-				if rarity_value == 5 then
-					love.graphics.setShader(shaders.scrolling_rainbow)
+				if show_rarity then
+					local rarity_value = item_universal_data["rarity"]
+					local rarity_str = utils.parse_descriptive_key(item_utils.RARITIES[rarity_value][1])
+					local print_x = math.floor(origin_x + box_width - last_font_used:getWidth(rarity_str))
+
+					print_text_shadow(rarity_str, math.floor(print_x + 1), math.floor(origin_y + 1))
+					set_draw_color(item_utils.RARITIES[rarity_value][2])
+					if rarity_value == 5 then
+						love.graphics.setShader(shaders.scrolling_rainbow)
+					end
+					visual_print(rarity_str, print_x, math.floor(origin_y))
+					reset_effects()
 				end
-				debug_print(str, print_x, math.floor(master_y))
-				reset_effects()
 				
 				
 				-- display bullets
-
+				
+				if show_bullets then
+					local center_x = math.floor(origin_x + math.floor(box_width / 2) - math.floor(last_font_used:getWidth("¤") / 2))
+					local big_slot_mod_x = 0
+					local big_slot_mod_y = 0
+					local slot_mod_x = 0
+					local slot_mod_y = 0
+					local area_mod_x = 0
+					local area_mod_y = 0
+					local speed = 15
+					local radius = 1.1
+					if slot.mode == "big_slot" then
+						big_slot_mod_x = (math.sin(love.timer.getTime() * speed) * radius)
+						big_slot_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+					elseif slot.mode == "slot" then
+						slot_mod_x = (math.sin(love.timer.getTime() * speed) * 2)
+						slot_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+					elseif slot.mode == "area" then
+						area_mod_x = (math.sin(love.timer.getTime() * speed) * 2)
+						area_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+					end
+					if box_width / 2 - 18 < last_font_used:getWidth(last_text_str) then
+						center_x = origin_x + last_font_used:getWidth(last_text_str) + 18
+					end
+					print(box_width / 2 - 18, last_font_used:getWidth(last_text_str))
+					set_draw_color(19)
+					visual_print("¤", math.floor(center_x - 8 + area_mod_x), math.floor(origin_y + area_mod_y))
+					set_draw_color(11)
+					visual_print("¤", math.floor(center_x + slot_mod_x), math.floor(origin_y + slot_mod_y))
+					set_draw_color(6)
+					visual_print("¤", math.floor(center_x + 8 + big_slot_mod_x), math.floor(origin_y + big_slot_mod_y))
+				end
 
 				-- display designation
-				if designation_goggles then
-					master_y = master_y + last_font_used:getHeight("my balls are FUCKED up")
+				if show_designation and item_universal_data["designation"] then
+					--master_y = master_y + last_font_used:getHeight("my balls are FUCKED up")
 					local print_x = master_x
 					local print_y = master_y
 					local designation_string = utils.parse_descriptive_key(item_universal_data["designation"])
 					love.graphics.setShader(shaders.rainbow)
-					debug_print("* ", math.floor(print_x), math.floor(print_y))
+					visual_print("* ", math.floor(print_x), math.floor(print_y))
 					print_x = print_x + last_font_used:getWidth("* ")
 					love.graphics.setShader()
 					set_draw_color(9)
-					debug_print(designation_string, math.floor(print_x), math.floor(print_y))
+					visual_print(designation_string, math.floor(print_x), math.floor(print_y))
 					print_x = print_x + last_font_used:getWidth(designation_string)
 					love.graphics.setShader(shaders.rainbow)
-					debug_print(" *", math.floor(print_x), math.floor(print_y))
+					visual_print(" *", math.floor(print_x), math.floor(print_y))
 					print_x = print_x + last_font_used:getWidth(" *")
+					master_y = master_y + last_font_used:getHeight("we're done here")
 				end
 
 			end
+			--master_y = master_y + last_font_used:getHeight(str)
 
 		elseif base_entry_key == "stat" then
 			parse_stat_print(base_entry_key, base_entry_data, true)
 
-		elseif base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] then
-			-- print slot name
+		elseif 
+			base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and slot_mode == base_entry_key or
+			base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and debug_showall 
+			then
 			master_y = master_y + slot_padding_y
 			local slot_name = item_utils.SLOT_VANITY_NAMES[base_entry_key][1]
 			print_text_shadow(slot_name, math.floor(master_x) + 1, math.floor(master_y) + 1)
 			set_draw_color(item_utils.SLOT_VANITY_NAMES[base_entry_key][2])
-			debug_print(slot_name, math.floor(master_x), math.floor(master_y))
+			visual_print(slot_name, math.floor(master_x), math.floor(master_y))
 			last_font_used = love.graphics.getFont()
 			master_y = master_y + last_font_used:getHeight(str)
 
@@ -759,24 +1051,21 @@ function draw_item_box(item, posx, posy)
 			reset_values()
 
 			for subindex, entry in ipairs(base_entry_data) do
-
 				master_x = origin_x
-
 				local entry_key = entry[1]
 				local entry_data = entry[2]
 				if entry_key == "text" then
-					if subindex ~= 1 then
-						-- this is a band-aid, but it works
-						master_y = master_y + last_font_used:getHeight("this is bad")
-					end
 					parse_text_print(entry_key, entry_data)
 				elseif entry_key == "stat" then
 					parse_stat_print(entry_key, entry_data)
+
 				end
 				
 			end
+		else
+			goto continue
 		end
-		master_y = master_y + last_font_used:getHeight(str)
+		
 
 		-- reset effects
 		reset_effects()
@@ -788,6 +1077,16 @@ function draw_item_box(item, posx, posy)
     print(string.format("It took %.3f milliseconds to render that shit", result * 1000))
 end
 
+local slot = {
+	uuid = 4,
+	mode = "big_slot"
+}
+
+local item = {
+	slot_uuid = 4,
+	data = item_nail,
+}
+
 function love.draw()
 	local x = love.mouse.getX() / window_scale
 	local y = love.mouse.getY() / window_scale
@@ -796,7 +1095,7 @@ function love.draw()
 
 
 	print_table_in_order(character_sheet, item_utils.STAT_CATEGORIES, 700, 50)
-	draw_item_box(item, x, y)
+	draw_item_box(item, slot, x, y)
 	
 
 	push:finish()
