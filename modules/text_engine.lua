@@ -6,570 +6,656 @@ local shaders = require("data/shaders")
 
 local text_engine = {}
 
-text_engine.showall = false
-text_engine.debug_id = false
-text_engine.designation_goggles = true
+text_engine.show_all_slots = false
+text_engine.show_id = true
+text_engine.show_designation = true
+text_engine.show_rarity = true
+text_engine.show_bullets = true
 
-text_engine.text = {}
-local active_font = utils.fonts[1]
+text_engine.game_height = nil
+text_engine.game_width = nil
 
-function has_content(tbl)
-    for _, value in pairs(tbl) do
-        if value ~= nil then return true end
-    end
-    return false
-end
-
-function text_engine.initialize_box_data(game_width, game_height)
-    box_x_offset = 25
-    box_y_offset = 25
-    window_w = game_width
-    window_h = game_height
-end
-
-function text_engine.update_box_coords(x, y)
-    box_x = x
-    box_y = y
-end
-
-function text_engine.initialize_alternate_fps(fps)
-    frame_counter = 0
-    last_call_frame = 0
-    target_fps = fps
-    frame_interval_in_secs = 1 / target_fps
-    elapsed_time_since_last_call = 0
-end
-
-function text_engine.update_at_30(dt)
-    frame_counter = frame_counter + 1
-    elapsed_time_since_last_call = frame_counter * dt
-    if elapsed_time_since_last_call >= frame_interval_in_secs then
-        -- functions here
-        update_box(dt)
-        frame_counter = 0
-        last_call_frame = frame_counter
+function text_engine.print_table_in_order(tbl, ordered_keys, x, y)
+    local posy = y or 0
+    local posx = x or 0
+    for _, key in ipairs(ordered_keys) do
+        love.graphics.print(key, posx, posy)
+        love.graphics.print(tostring(tbl[key]), posx + 150, posy)
+        posy = posy + 10
     end
 end
 
--- this shit is fucking retarded god damn
+function text_engine.visual_print(str, x, y)
+    love.graphics.print(tostring(str), x, y)
+end
 
-text_engine.iitt_handlers = {
-    ["bullet"] = function(box, row, feature_data)
-        for _, str in ipairs(feature_data) do
-            text_engine.iitt(box, "- ".. str, row, 1, 9)
-            row = row + 1
-        end
-        return row
-    end,
-    ["lore"] = function(box, row, feature_data, other_data)
-        for _, str in ipairs(feature_data) do
-            love.graphics.setFont(utils.fonts[2])
-            text_engine.iitt(box, str, row, 1, 30, 0, 2, {text_font = 2})
-            row = row + 1
-        end
-        return row
-    end,
-    ["description"] = function(box, row, feature_data)
-        for _, str in ipairs(feature_data) do
-            love.graphics.setFont(utils.fonts[2])
-            text_engine.iitt(box, str, row, 1, 22, 0, 0, {text_font = 2})
-            row = row + 1
-        end
-        return row
-    end,
-    ["name"] = function(box, row, feature_data, other_data, content_check, slot_check)
-        local column = 2
-        local name_color = 22
-        local effect_override = other_data.effect_override or {}
-        if other_data.rarity then
-            name_color = item_utils.RARITY_COLORS[other_data.rarity]
-            if other_data.rarity == "ultimate" and not effect_override["text_shader"] then 
-                effect_override["text_shader"] = "scrolling_rainbow"
-            end
-        end
-        if not effect_override["text_shader"] then
-            effect_override["text_shader"] = "shimmer"
-        end
-        
-        for _, str in ipairs(feature_data) do
-            text_engine.iitt(box, str .. " ", row, 1, name_color, 0, 0, effect_override)
-        end
+function text_engine.set_draw_color(value)
+    local color = utils.colors[value]
+    love.graphics.setColor(love.math.colorFromBytes(color[1], color[2], color[3]))
+end
 
-        -- display markers showing if an item has an effect in a specific slot
-        -- it spins around when the item is inside a specific slot
-        if content_check.big_slot then 
-            if slot_check.big_slot then
-                text_engine.iitt(box, "¤", row, column, 6, 2, 0, {text_coordinate_transformation = {"circle", 0.2, 24}})
-            else
-                text_engine.iitt(box, "¤", row, column, 6, 1, 0)
-            end
-            column = column + 1
-        end
-        if content_check.slot then 
-            if slot_check.slot then
-                text_engine.iitt(box, "¤", row, column, 11, 2, 0, {text_coordinate_transformation = {"circle", 0.2, 24}})
-            else
-                text_engine.iitt(box, "¤", row, column, 11, 1, 0)
-            end
-            column = column + 1
-        end
-        if content_check.area then 
-            if slot_check.area then
-                text_engine.iitt(box, "¤", row, column, 19, 2, 0, {text_coordinate_transformation = {"circle", 0.2, 24}})
-            else
-                text_engine.iitt(box, "¤", row, column, 19, 1, 0)
-            end
-            column = column + 1
-        end
+function text_engine.set_font(value)
+    love.graphics.setFont(utils.fonts[value])
+end
 
-        if text_engine.debug_id then
-            text_engine.iitt(box, " ".. tostring(other_data.id), row, column, 18)
-        end
-        row = row + 1
+function text_engine.send_to_shaders()
+    shaders.shimmer:send("time", love.timer.getTime() * 2.5)
+    shaders.scrolling_rainbow:send("time", love.timer.getTime() * 50)
+    shaders.rainbow:send("time", love.timer.getTime() * 100)
+    shaders.corrupt:send("time", love.timer.getTime() * 2.5)
+    shaders.pulse:send("time", love.timer.getTime())
+    shaders.ripple:send("time", love.timer.getTime() * 15)
+    shaders.blink:send("time", love.timer.getTime())
+end
 
-        if text_engine.designation_goggles and other_data.designation then
-            text_engine.iitt(box, "* ", row, 1, 9, 0, 0, {text_shader = "rainbow"})
-            text_engine.iitt(box, utils.parse_descriptive_key(other_data.designation), row, 2, 22)
-            text_engine.iitt(box, " *", row, 3, 9, 0, 0, {text_shader = "rainbow"})
-            row = row + 1
-        end
-        return row
-    end,
-}
+function text_engine.count_newlines(input)
+    if type(input) ~= 'string' then
+        return
+    end
+    local cleaned_string, section_sign_count = input:gsub('§', '')
+    return cleaned_string, section_sign_count
+end
 
--- if other_data.effect_override then
---             name_color = other_data.effect_override.name_color
---             name_shader = other_data.effect_override.name_shader
---         else
+function text_engine.draw_item_box(item, slot, posx, posy)
+    local start = love.timer.getTime()
 
-text_engine.new_slot = nil
-
--- takes an item table and populates d_box using iitt()
-function text_engine.iitt_item(box, item, slot)
-    -- figure out if big_slot, slot, or area tables in item.data exist
-    -- this will be relevant when iitting the item's name
-    local content_check = {
-        big_slot = false,
-        slot = false,
-        area = false,
+    local transformation_handlers = {
+        ["circle"] = function(x, y, radius, speed, pi_offset)
+            x = x + (math.sin(love.timer.getTime() * speed) * radius)
+            y = y + (math.sin(love.timer.getTime() * speed + (math.pi / 2 + pi_offset)) * radius)
+            return x, y
+        end,
+        ["bounce"] = function(x, y, intensity, speed)
+            x = x
+            y = y + -math.abs(math.sin(love.timer.getTime() * speed) * intensity)
+            return x, y
+        end,
+        ["displace"] = function(x, y, dx, dy)
+            x = x + dx
+            y = y + dy
+            return x, y
+        end,
+        ["random_displace"] = function(x, y, mx, my)
+            x = x + math.random(-mx, mx)
+            y = y + math.random(-my, my)
+            return x, y
+        end,
     }
-    local slot_check = {
-        big_slot = false,
-        slot = false,
-        area = false,
+
+    
+
+    -- init variables
+
+    local master_x = 0
+    local master_y = 0
+
+    local offset_x = 0
+    local offset_y = 0
+
+    local padding_x = 0
+    local padding_y = 0
+
+    function reset_effects()
+        text_engine.set_draw_color(22)
+        love.graphics.setShader()
+        love.graphics.setFont(utils.fonts[1])
+    end
+
+    function reset_values()
+        offset_x = 0
+        offset_y = 0
+        padding_y = 0
+        padding_x = 0
+    end
+
+    local effect_handlers = {
+        ["color"] = function(int)
+            text_engine.set_draw_color(int)
+        end,
+        ["shader"] = function(shader)
+            love.graphics.setShader(shader)
+        end,
+        ["transformation"] = function()
+        end,
+        ["font"] = function(int)
+            love.graphics.setFont(utils.fonts[int])
+        end,
+        ["padding_x"] = function(int)
+            padding_x = int
+        end,
+        ["padding_y"] = function(int)
+            padding_y = int
+        end,
+        ["offset_x"] = function(int)
+            offset_x = int
+        end,
+        ["offset_y"] = function(int)
+            offset_y = int
+        end,
     }
-    for _, value in ipairs(item.data) do
-        if value[1] == item_utils.SLOT_CATEGORIES[value[1]] then
-            content_check[value[1]] = true
+
+    local item_data = item.data
+    local slot_mode = "default"
+    if item.slot_uuid == slot.uuid then
+        slot_mode = slot.mode
+    end
+
+    local master_offset = 25
+
+    local item_universal_data = item_data[1][2]
+
+    local origin_x = posx + master_offset
+    local origin_y = posy + master_offset
+    local last_font_used = love.graphics.getFont()
+    local box_width = 0
+    local box_height = 0
+
+    local slot_padding_y = 4
+    local box_padding = 4
+    local text_shadow = true
+
+    local function print_text_shadow(str, x, y)
+        local shader = love.graphics.getShader()
+        love.graphics.setShader()
+        local r, g, b, a = love.graphics.getColor()
+        text_engine.set_draw_color(1)
+        text_engine.visual_print(str, x, y)
+        love.graphics.setColor(r, g, b, a)
+        love.graphics.setShader(shader)
+    end
+    
+
+    local function parse_text_print(key, data)
+        if #data % 2 == 1 then
+            error("text_effects defined without following string at item_data index " .. index .. ": " .. tostring(base_entry_key))
         end
-    end
+        local str = ""
+        local newline_count = 0
+        local accum_padding_y = 0
+        local accum_newline_count = 1
+        local print_x = math.floor(master_x + offset_x)
+        local print_y = math.floor(master_y + offset_y)
+        local temp_width = 0
+        for i, e in ipairs(data) do
+            -- handle this shit on groups 2 at a time
+            if i % 2 == 1 then
+                local text_effects = data[i]
+                str, newline_count = text_engine.count_newlines(data[i + 1])
+                local last_str = nil
+                if data[i-1] and data[i-1]:find('§') then
+                    last_str = data[i-1]
+                    local split_string = (last_str:sub(data[i-1]:find('§') + 2))
+                    print(split_string)
+                    temp_width = last_font_used:getWidth(split_string)
+                end
+                print_x = math.floor(origin_x + temp_width)
 
-    item_universal_data = item.data[1][2]
-
-    if slot.mode then
-        slot_check[slot.mode] = true
-    end
-
-    -- engage the fuckening
-    text = {}
-    local new_slot = nil
-    local row = 1
-    for _, category in ipairs(item.data) do
-        local category_name = category[1]
-        local category_data = category[2]
-
-        -- slot dependent stats/visuals
-        
-        active_font = utils.fonts[1]
-
-        if 
-            (category_name == item_utils.SLOT_CATEGORIES[category_name] and category_name == slot.mode) or 
-            (category_name == item_utils.SLOT_CATEGORIES[category_name] and (slot.mode == "showoff" or text_engine.showall == true)) 
-            then
-
-            
-            -- store the active slot's information here!
-            if slot.uuid ~= stored_slot_uuid then
-                stored_slot_uuid = slot.uuid
-                new_slot = slot.mode
-            end
-
-            
-            text_engine.iitt(box, item_utils.SLOT_VANITY_NAMES[category_name][1], row, 1, item_utils.SLOT_VANITY_NAMES[category_name][2], 0, 4)
-            row = row + 1
-
-            for _, feature in ipairs(category_data) do
-                local feature_name = feature[1]
-                local feature_data = feature[2]
-
-                -- descriptive handle
-                if feature_name == item_utils.DESC_CATEGORIES[feature_name] then
-                    local handler = text_engine.iitt_handlers[feature_name]
-                    if handler then
-                        row = handler(box, row, feature_data, item_universal_data, content_check)
-                    end
                 
-                -- value handle
-                elseif feature_name == item_utils.STAT_CATEGORIES[feature_name] then
-                    local modifier = feature_data[1]
-                    local value = feature_data[2]
-                    local val_str = tostring(value)
-                    local mod_str = ""
-                    if value >= 0 and modifier ~= "multiply" then 
-                        val_str = tostring("+"..value) 
-                    elseif modifier == "multiply" then
-                        val_str = tostring("x"..value)
-                    end
-                    if modifier == "percent" then
-                        mod_str = "%"
-                    end
-                    text_engine.iitt(box, val_str..mod_str .. " " .. utils.parse_descriptive_key(feature_name), row, 1, 22)
-                    row = row + 1
-                end
-            end
-
-        -- these are displayed all the time no matter which slot
-        elseif category_name == item_utils.DESC_CATEGORIES[category_name] then
-            local handler = text_engine.iitt_handlers[category_name]
-            if handler then
-                row = handler(box, row, category_data, item_universal_data, content_check, slot_check)
-            end
-
-        -- default case
-        elseif slot.mode ~= item_utils.SLOT_CATEGORIES[slot.mode] and category_name == "default" then
-
-            for _, feature in ipairs(category_data) do
-                local feature_name = feature[1]
-                local feature_data = feature[2]
-
-                if feature_name == item_utils.DESC_CATEGORIES[feature_name] then
-                    local handler = text_engine.iitt_handlers[feature_name]
+                for category, value in pairs(text_effects) do
+                    local handler = effect_handlers[category]
                     if handler then
-                        row = handler(box, row, feature_data)
+                        handler(value)
+                    end
+                end
+
+                last_font_used = love.graphics.getFont()
+                accum_padding_y = accum_padding_y + padding_y
+                accum_newline_count = accum_newline_count + newline_count
+                temp_width = temp_width + last_font_used:getWidth(str)
+
+                if text_effects["align"] and text_effects["align"] == "right" then
+                    print_x = math.floor(origin_x + box_width - last_font_used:getWidth(str) + offset_x)
+                elseif text_effects["align"] and text_effects["align"] == "center" then
+                    print_x = math.floor(origin_x + (box_width / 2) - math.floor(last_font_used:getWidth(str) / 2) + offset_x)
+                end
+                print_x = print_x + offset_x
+
+                -- transformation effects
+                local mod_x = print_x
+                local mod_y = print_y
+                for category, value in pairs(text_effects) do
+                    local handler = transformation_handlers[category]
+                    if handler then
+                        mod_x, mod_y = handler(mod_x, mod_y, value[1], value[2], value[3])
+                    end
+                end
+
+                if text_shadow then
+                    print_text_shadow(str, mod_x + 1, mod_y + 1)
+                end
+                text_engine.visual_print(str, mod_x, mod_y)
+                print_y = print_y + last_font_used:getHeight(".") * newline_count
+                
+                master_x = master_x + last_font_used:getWidth(str) + padding_x
+                reset_effects()
+                reset_values()
+                print_x = math.floor(master_x)
+            end
+        end
+        --print(master_y, last_font_used:getHeight(str), accum_newline_count, accum_padding_y)
+        master_y = master_y + last_font_used:getHeight(str) * (accum_newline_count) + accum_padding_y
+        return str
+    end
+
+    local function parse_text_dims(key, data)
+        if #data % 2 == 1 then
+            error("text_effects defined without following string at item_data index " .. index .. ": " .. tostring(base_entry_key))
+        end
+        local temp_width = 0
+        local str = ""
+        local newline_count = 0
+        local accum_padding_y = 0
+        local accum_newline_count = 1
+        for i, e in ipairs(data) do
+            -- handle this shit on groups 2 at a time
+            if i % 2 == 1 then
+                -- figure out how to cut off the string at a character
+                local text_effects = data[i]
+                str, newline_count = text_engine.count_newlines(data[i + 1])
+                if data[i-1] and data[i-1]:find('§') then
+                    temp_width = 0
+
+                end
+                for category, value in pairs(text_effects) do
+                    local handler = effect_handlers[category]
+                    if handler then
+                        handler(value)
+                    end
+                end
+                last_font_used = love.graphics.getFont()
+                temp_width = temp_width + last_font_used:getWidth(str) + offset_x + padding_x
+                if temp_width > box_width then
+                    box_width = temp_width
+                end
+                accum_padding_y = accum_padding_y + padding_y
+                reset_effects()
+                accum_newline_count = accum_newline_count + newline_count
+                reset_values()
+
+            end
+        end
+        box_height = box_height + last_font_used:getHeight("hi") * (accum_newline_count) + accum_padding_y + offset_y
+
+        
+        reset_effects()
+        reset_values()
+        last_font_used = utils.fonts[1]
+        return str
+    end
+
+    local function parse_stat_print(key, data)
+        local str = ""
+        local stat = data[1]
+        local modifier = data[2]
+        local value = data[3]
+        local abs_value = math.abs(data[3])
+        local active_font = love.graphics.getFont()
+
+        last_font_used = love.graphics.getFont()
+        
+
+        
+        local str_modifier = ""
+        local str_value = ""
+        local str_percent = ""
+        local str_statname = ""
+        
+        if modifier == "add" or modifier == "percent" then
+            if value >= 0 then
+                str_modifier = "+"
+            else
+                str_modifier = "-"
+            end
+            str = str .. str_modifier
+            
+        elseif modifier == "multiply" then
+            if value >= 0 then
+                str_modifier = "x"
+            else
+                str_modifier = "x -"
+            end
+            str = str .. str_modifier
+        end
+        
+        -- print value
+        str_value = tostring(abs_value)
+        str = str .. str_value
+        
+        
+        
+        if modifier == "percent" then
+            str_percent = "%"
+            str = str .. str_percent
+            
+        end
+        
+        -- stat name
+        str_statname = " " .. utils.parse_descriptive_key(stat)
+        str = str .. str_statname
+        
+
+        text_engine.set_font(1)
+
+        print_text_shadow(str, math.floor(master_x + offset_x) + 1, math.floor(master_y) + 1)
+
+        text_engine.set_draw_color(22)
+        
+
+        -- print everything
+        text_engine.visual_print(str_modifier, math.floor(master_x + offset_x), math.floor(master_y))
+        master_x = master_x + active_font:getWidth(str_modifier)
+        text_engine.set_draw_color(9)
+        
+        text_engine.visual_print(str_value, math.floor(master_x + offset_x), math.floor(master_y))
+        master_x = master_x + active_font:getWidth(str_value)
+        text_engine.set_draw_color(22)
+        text_engine.visual_print(str_percent, math.floor(master_x + offset_x), math.floor(master_y))
+        master_x = master_x + active_font:getWidth(str_percent)
+        text_engine.visual_print(str_statname, math.floor(master_x + offset_x), math.floor(master_y))
+        master_x = master_x + active_font:getWidth(str_statname)
+
+        local handler = effect_handlers["offset_x"]
+        handler(0)
+        
+        --text_engine.visual_print(str, math.floor(master_x + offset_x), math.floor(master_y))
+        reset_effects()
+        reset_values()
+        master_y = master_y + last_font_used:getHeight("hi")
+    end
+
+    local temp = 1
+
+    local function parse_stat_dims(key, data)
+        local str = ""
+        local stat = data[1]
+        local modifier = data[2]
+        local value = data[3]
+        local active_font = love.graphics.getFont()
+        if modifier == "add" and value > 0 then
+            str = str .. "+"
+        elseif modifier == "percent" and value > 0 then
+            str = str .. "+"
+        elseif modifier == "multiply" then
+            str = str .. "x"
+        end
+        str = str .. tostring(value)
+        if modifier == "percent" then
+            str = str .. "%"
+        end
+        str = str .. " " .. utils.parse_descriptive_key(stat)
+        if active_font:getWidth(str) > box_width then
+            box_width = active_font:getWidth(str)
+        end
+        box_height = box_height + last_font_used:getHeight("hi")
+    end
+    -- *
+    -- fix this
+    -- make string and find width of string
+    local function find_box_dims()
+        for index, base_entry in ipairs(item_data) do
+            local base_entry_key = base_entry[1]
+            local base_entry_data = base_entry[2]
+            if base_entry_key == "text" then
+                local last_text_str = parse_text_dims(base_entry_key, base_entry_data)
+                if index == 2 then
+                    if text_engine.show_designation and item_universal_data["designation"] then
+                        box_height = box_height + last_font_used:getHeight(".")
+                    end
+                end
+                
+            elseif base_entry_key == "stat" then
+                parse_stat_dims(base_entry_key, base_entry_data)
+            elseif 
+                base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and slot_mode == base_entry_key or
+                base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and text_engine.show_all_slots 
+                then
+                last_font_used = utils.fonts[1]
+                box_height = box_height + last_font_used:getHeight("hi") + slot_padding_y
+                reset_effects()
+                reset_values()
+                for subindex, entry in ipairs(base_entry_data) do
+                    local entry_key = entry[1]
+                    local entry_data = entry[2]
+                    if entry_key == "text" then
+                        parse_text_dims(entry_key, entry_data)
+                    elseif entry_key == "stat" then
+                        parse_stat_dims(entry_key, entry_data)
                     end
                 end
             end
         end
+    end
+
+
+    
+
+    text_engine.send_to_shaders()
+    reset_effects()
+    find_box_dims()
+    if item.data[2][2][2] then
+        if box_width < last_font_used:getWidth(item.data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1]) then
+            box_width = last_font_used:getWidth(item.data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1])
+        end
+    end
+
+    -- display box
+
+    if origin_x + box_width > text_engine.game_width then
+        origin_x = origin_x - box_width - master_offset * 2
+    end
+
+    if origin_y + box_height > text_engine.game_height then
+        origin_y = origin_y - box_height - master_offset * 2
+    end
+
+    local box_line_effects
+    if item_universal_data["box_line_effects"] then
+        box_line_effects = item_universal_data["box_line_effects"]
+    else
+        box_line_effects = {
+            color = 22
+        }
+    end
+    local box_back_effects
+    if item_universal_data["box_back_effects"] then
+        box_back_effects = item_universal_data["box_back_effects"]
+    else
+        box_back_effects = {
+            color = 22,
+        }
+    end
+
+    local lines_amount = 1
+
+    local temp_box_padding = box_padding
+
+    for category, value in pairs(box_back_effects) do
+        local handler = effect_handlers[category]
+        handler(value)
+    end
+    local ar, ag, ab = love.graphics.getColor()
+    ar = ar * 0.25
+    ag = ag * 0.25
+    ab = ab * 0.25
+    love.graphics.setColor(ar, ag, ab, 0.85)
+    love.graphics.rectangle(
+        'fill', 
+        math.floor(origin_x) - 0.5 - box_padding, 
+        math.floor(origin_y) - 0.5 - box_padding, 
+        math.floor(box_width + (box_padding * 2.5)), 
+        math.floor(box_height + (box_padding * 2.5) + 0)
+    )
+    reset_effects()
+
+    for category, value in pairs(box_line_effects) do
+        local handler = effect_handlers[category]
+        if handler then
+            handler(value)
+        end
+    end
+    
+    if box_line_effects["amount"] then
+        lines_amount = box_line_effects["amount"]
+    end
+    for i = 1, lines_amount do
+        love.graphics.rectangle(
+            'line', 
+            math.floor(origin_x) - 0.5 - temp_box_padding, 
+            math.floor(origin_y) - 0.5 - temp_box_padding, 
+            math.floor(box_width + (temp_box_padding * 2)), 
+            math.floor(box_height + (temp_box_padding * 2) + 0)
+        )
+        temp_box_padding = temp_box_padding + 2
+    end
+    
+    reset_effects()
+
+    
+    
+    -- print stuff
+    master_y = origin_y
+
+    for index, base_entry in ipairs(item_data) do
+        master_x = origin_x
+        local base_entry_key = base_entry[1]
+        local base_entry_data = base_entry[2]
+
+        if base_entry_key == "data" then
+            goto continue
+        end
+
+        if base_entry_key == "text" then
+            local last_text_str = parse_text_print(base_entry_key, base_entry_data)
+            if index == 2 then
+                -- display item id
+                if text_engine.show_id then
+                    local id_text = item_universal_data["id"]
+                    text_engine.visual_print(id_text, math.floor(origin_x + 5 + last_font_used:getWidth(last_text_str)), math.floor(origin_y))
+                end
+
+                master_x = origin_x
+            
+                -- display rarity
+                if text_engine.show_rarity then
+                    local rarity_value = item_universal_data["rarity"]
+                    local rarity_str = utils.parse_descriptive_key(item_utils.RARITIES[rarity_value][1])
+                    local print_x = math.floor(origin_x + box_width - last_font_used:getWidth(rarity_str))
+
+                    print_text_shadow(rarity_str, math.floor(print_x + 1), math.floor(origin_y + 1))
+                    text_engine.set_draw_color(item_utils.RARITIES[rarity_value][2])
+                    if rarity_value == 5 then
+                        love.graphics.setShader(shaders.scrolling_rainbow)
+                    end
+                    text_engine.visual_print(rarity_str, print_x, math.floor(origin_y))
+                    reset_effects()
+                end
+                
+                
+                -- display bullets
+                
+                if text_engine.show_bullets then
+                    local center_x = math.floor(origin_x + math.floor(box_width / 2) - math.floor(last_font_used:getWidth("¤") / 2))
+                    local big_slot_mod_x = 0
+                    local big_slot_mod_y = 0
+                    local slot_mod_x = 0
+                    local slot_mod_y = 0
+                    local area_mod_x = 0
+                    local area_mod_y = 0
+                    local speed = 15
+                    local radius = 1.1
+                    if slot.mode == "big_slot" then
+                        big_slot_mod_x = (math.sin(love.timer.getTime() * speed) * radius)
+                        big_slot_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+                    elseif slot.mode == "slot" then
+                        slot_mod_x = (math.sin(love.timer.getTime() * speed) * 2)
+                        slot_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+                    elseif slot.mode == "area" then
+                        area_mod_x = (math.sin(love.timer.getTime() * speed) * 2)
+                        area_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
+                    end
+                    if box_width / 2 - 18 < last_font_used:getWidth(last_text_str) then
+                        center_x = origin_x + last_font_used:getWidth(last_text_str) + 18
+                    end
+                    print(box_width / 2 - 18, last_font_used:getWidth(last_text_str))
+                    -- draw shadows
+                    text_engine.set_draw_color(1)
+                    text_engine.visual_print("¤", math.floor(center_x - 8 + area_mod_x + 1), math.floor(origin_y + area_mod_y + 1))
+                    text_engine.visual_print("¤", math.floor(center_x + slot_mod_x + 1), math.floor(origin_y + slot_mod_y + 1))
+                    text_engine.visual_print("¤", math.floor(center_x + 8 + big_slot_mod_x + 1), math.floor(origin_y + big_slot_mod_y + 1))
+
+                    text_engine.set_draw_color(19)
+                    text_engine.visual_print("¤", math.floor(center_x - 8 + area_mod_x), math.floor(origin_y + area_mod_y))
+                    text_engine.set_draw_color(11)
+                    text_engine.visual_print("¤", math.floor(center_x + slot_mod_x), math.floor(origin_y + slot_mod_y))
+                    text_engine.set_draw_color(6)
+                    text_engine.visual_print("¤", math.floor(center_x + 8 + big_slot_mod_x), math.floor(origin_y + big_slot_mod_y))
+                end
+
+                -- display designation
+                if text_engine.show_designation and item_universal_data["designation"] then
+                    --master_y = master_y + last_font_used:getHeight("my balls are FUCKED up")
+                    local print_x = master_x
+                    local print_y = master_y
+                    local designation_string = utils.parse_descriptive_key(item_universal_data["designation"])
+                    love.graphics.setShader(shaders.rainbow)
+                    text_engine.visual_print("* ", math.floor(print_x), math.floor(print_y))
+                    print_x = print_x + last_font_used:getWidth("* ")
+                    love.graphics.setShader()
+                    text_engine.set_draw_color(9)
+                    text_engine.visual_print(designation_string, math.floor(print_x), math.floor(print_y))
+                    print_x = print_x + last_font_used:getWidth(designation_string)
+                    love.graphics.setShader(shaders.rainbow)
+                    text_engine.visual_print(" *", math.floor(print_x), math.floor(print_y))
+                    print_x = print_x + last_font_used:getWidth(" *")
+                    master_y = master_y + last_font_used:getHeight("we're done here")
+                end
+
+            end
+            --master_y = master_y + last_font_used:getHeight(str)
+
+        elseif base_entry_key == "stat" then
+            parse_stat_print(base_entry_key, base_entry_data, true)
+
+        elseif 
+            base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and slot_mode == base_entry_key or
+            base_entry_key == item_utils.SLOT_CATEGORIES[base_entry_key] and text_engine.show_all_slots 
+            then
+            master_y = master_y + slot_padding_y
+            local slot_name = item_utils.SLOT_VANITY_NAMES[base_entry_key][1]
+            print_text_shadow(slot_name, math.floor(master_x) + 1, math.floor(master_y) + 1)
+            text_engine.set_draw_color(item_utils.SLOT_VANITY_NAMES[base_entry_key][2])
+            text_engine.visual_print(slot_name, math.floor(master_x), math.floor(master_y))
+            last_font_used = love.graphics.getFont()
+            master_y = master_y + last_font_used:getHeight(str)
+
+            reset_effects()
+            reset_values()
+
+            for subindex, entry in ipairs(base_entry_data) do
+                master_x = origin_x
+                local entry_key = entry[1]
+                local entry_data = entry[2]
+                if entry_key == "text" then
+                    parse_text_print(entry_key, entry_data)
+                elseif entry_key == "stat" then
+                    parse_stat_print(entry_key, entry_data)
+
+                end
+                
+            end
+        else
+            goto continue
+        end
+        
+
+        -- reset effects
+        reset_effects()
+        reset_values()
+        ::continue::
     end
     print()
-    return new_slot
-end
-
--- takes string and some location data
--- returns table containing the string and its x,y coordinates
--- flag is for setting a modifier to the text, like a shader or effect
-function text_engine.iitt(box, str, row, column, color, x_mod, y_mod, effect_override)
-    -- insert into tooltip
-
-    text[row] = text[row] or {}
-    text[row][column] = text[row][column] or {}
-
-    -- determine x value
-    if text[row] ~= nil and text[row][column-1] ~= nil then
-        x = text[row][column-1][2] + active_font:getWidth(text[row][column-1][1])
-    else
-        x = box.x
-    end
-
-    -- determine y value
-    if text[row-1] ~= nil and text[row-1][column] ~= nil then
-        y = text[row-1][column][3] + active_font:getHeight()
-    elseif text[row-1] ~= nil then
-        y = text[row-1][1][3] + active_font:getHeight()
-    else
-        y = box.y
-    end
-    
-    x = x + (x_mod or 0)
-    y = y + (y_mod or 0)
-    text[row][column] = {str, x, y, color, effect_override, x_mod, y_mod}
-end
-
-local stored_item_uuid = nil
-local stored_slot_uuid = nil
-
-function text_engine.fix_box_dims(box)
-    -- find the max width of the whole tooltip
-    -- set the variable so the render will be correct
-    local str = ""
-    local max_width = 0
-    local x_mod = 0 -- handle box width if text has an x_mod value
-
-    if text ~= {} then
-        for row = 1, #text do
-            local proper_font = utils.fonts[1]
-            str = ""
-            for column = 1, #text[row] do
-                str = str .. text[row][column][1]
-                if text[row][column][6] then
-                    x_mod = x_mod + text[row][column][6]
-                end
-
-                -- if there are different fonts in the same text box, then you don't want
-                -- the box to be wider than it needs to be.,,, you nincompooper
-                if text[row][column][5] and text[row][column][5]["text_font"] then
-                    proper_font = utils.fonts[text[row][column][5]["text_font"]]
-                end
-                -- it's all balanced and things
-            end
-            if active_font:getWidth(str) > max_width then
-                if x_mod ~= 0 then
-                    max_width = proper_font:getWidth(str) + (x_mod)
-                else
-                    max_width = proper_font:getWidth(str)
-                end
-            end
-            -- print(str)
-
-            
-            -- print((box.x + utils.fonts[1]:getWidth(str)) - box.x)
-            -- print((box.x + utils.fonts[2]:getWidth(str)) - box.x)
-        end
-
-        box.w = max_width
-    end
-
-    -- find the max height of the whole tooltip
-    -- set the variable so the render will be correct
-    if text[#text] ~= nil then
-        box.h = text[#text][1][3] + active_font:getHeight() - box.y
-    end
-end
-
-function text_engine.update_box(box, item, slot, x, y)
-    local start = love.timer.getTime()
-    local data = item.data
-    local mode = slot.mode or "default"
-    text_engine.new_slot = nil
-    
-    box.x = x + box_x_offset
-    box.y = y + box_y_offset
-    
-    
-    box.text = {}
-    
-
-    -- hold the box in place if it goes out of bounds in y direction
-    -- im so fuckgin dumb here
-    if box.y < 0 then
-        box.y = 8
-    end
-    if box.y + box.h > window_h then
-        box.y = window_h - box.h - 8
-    end
-
-    if item.uuid ~= stored_item_uuid or slot.uuid ~= stored_slot_uuid then
-        box.w = 0
-        box.h = 0
-        text_engine.new_slot = text_engine.iitt_item(box, item, slot)
-        text_engine.fix_box_dims(box)
-
-        stored_item_uuid = item.uuid
-        stored_slot_uuid = slot.uuid
-    end
-    
-    -- reposition box if it goes out of bounds
-    if box.x + box.w > window_w then
-        box.x = box.x - box.w - (box_x_offset * 2)
-    end
-    if box.y + box.h > window_h + 50 then
-        box.y = box.y - box.h - (box_y_offset * 2)
-    end
-
-    text_engine.iitt_item(box, item, slot)
-    text_engine.fix_box_dims(box)
-    
-    -- TODO:
-    -- add image support, which means ill have to find out a way to detect if it's an image
-    -- - and also get the height and width of the image in pixels when needed
-
-    -- make a tool for making item json text
-    -- somehow incorporate color codes and shader codes
-    local result = love.timer.getTime() - start
-    print(string.format("It took %.3f milliseconds to do that shit", result * 1000))
-end
-
-text_engine.coordinate_transformation_handlers = {
-    ["circle"] = function(x, y, radius, speed)
-        x = x + (math.sin(love.timer.getTime() * speed) * radius)
-        y = y + (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
-        return x, y
-    end,
-    ["bounce"] = function(x, y, intensity, speed)
-        x = x
-        y = y + -math.abs(math.sin(love.timer.getTime() * speed) * intensity)
-        return x, y
-    end,
-    ["displace"] = function(x, y, dx, dy)
-        x = x + dx
-        y = y + dy
-        return x, y
-    end,
-}
-
-text_engine.shader_handlers = {
-    ["rainbow"] = function()
-        shaders.rainbow:send("time", love.timer.getTime() * 100)
-        return shaders.rainbow
-    end,
-    ["scrolling_rainbow"] = function()
-        shaders.scrolling_rainbow:send("time", love.timer.getTime() * 50)
-        return shaders.scrolling_rainbow
-    end,
-    ["shimmer"] = function()
-        shaders.shimmer:send("time", love.timer.getTime() * 2.5)
-        return shaders.shimmer
-    end,
-}
-
-function text_engine.render_box(box)
-    local start = love.timer.getTime()
-    local shadow_color = utils.colors[1]
-    local box_background_color = {0, 0, 0, 0.65}
-    local box_outline_offset = 4.5
-    local effect_override = nil
-
-    -- render box background
-    if box.h ~= nil then
-        
-        love.graphics.setColor(unpack(box_background_color))
-        love.graphics.rectangle('fill', math.floor(box.x) - 4.5, math.floor(box.y) - 4.5, box.w + 8, box.h + 8)
-        love.graphics.setShader()
-    end
-
-
-    -- render the text
-    for row = 1, #text do
-        local str = ""
-        for column = 1, #text[row] do
-            local entry = text[row][column]
-            local color = utils.colors[entry[4]]
-            
-            str = str .. entry[1]
-            local x_final = math.floor(entry[2])
-            local y_final = math.floor(entry[3])
-
-            effect_override = nil
-
-            -- get effect_override if possible
-            -- this will control fucking a lot of shit, including text font, color, shader and box graphics as well
-            active_font = utils.fonts[1]
-
-            if entry[5] then
-                effect_override = entry[5]
-                if effect_override.text_font then
-                    active_font = utils.fonts[effect_override.text_font]
-                end
-            end
-            
-            love.graphics.setFont(active_font)
-
-            -- storage for shader effect
-            local final_text_effect = nil
-            -- switch on if shader does not chance colors
-            local shader_transform = false
-
-            -- each item can have an effect_override table, which applies to its name and box
-            if effect_override then
-                -- great reading here fuckin hell
-                local coordinate_transformation_handler = nil
-                if effect_override["text_coordinate_transformation"] then
-                    coordinate_transformation_handler = text_engine.coordinate_transformation_handlers[effect_override["text_coordinate_transformation"][1]]
-                end
-                local color_override = effect_override["text_color"]
-                local font_override = effect_override["text_font"]
-
-
-                if coordinate_transformation_handler then
-                    x_final, y_final = coordinate_transformation_handler(x_final, y_final, effect_override.text_coordinate_transformation[2], effect_override.text_coordinate_transformation[3])
-                end
-
-                if color_override then
-                    color = utils.colors[color_override]
-                end
-
-                if font_override then
-                    active_font = utils.fonts[font_override]
-                end
-            end
-
-            -- make shadow follow text shader
-            if shader_transform then
-                love.graphics.setShader(final_text_effect)
-            end
-
-            -- text shadow
-            love.graphics.setColor(love.math.colorFromBytes(shadow_color[1], shadow_color[2], shadow_color[3]))
-            love.graphics.print(entry[1], math.floor(x_final+1), math.floor(y_final+1))
-
-            -- reset for actual text
-            love.graphics.setColor(love.math.colorFromBytes(color[1], color[2], color[3]))
-            love.graphics.setFont(active_font)
-
-            if effect_override then
-                local shader_handler = text_engine.shader_handlers[effect_override["text_shader"]]
-                if shader_handler then
-                    love.graphics.setShader(shader_handler())
-                end
-            end
-            
-            -- render text
-            love.graphics.print(entry[1], math.floor(x_final), math.floor(y_final))
-            
-            -- reset shader after render
-            love.graphics.setShader()
-            love.graphics.setColor(1, 1, 1, 1)
-            -- set font to default font
-        end
-    end
-
-
-
-    -- render outline box
-    if text[#text] ~= nil then
-        love.graphics.setShader(final_text_effect)
-
-        -- effects here
-
-        if effect_override then
-            -- local coordinate_transformation_handler = nil
-            -- if effect_override["box_coordinate_transformation"] then
-            --     coordinate_transformation_handler = text_engine.coordinate_transformation_handlers[effect_override["box_coordinate_transformation"][1]]
-            -- end
-            -- local color_override = effect_override["box_color"]
-
-
-            -- if coordinate_transformation_handler then
-            --     x_final, y_final = coordinate_transformation_handler(x_final, y_final, effect_override["box_coordinate_transformation"][2], effect_override["box_coordinate_transformation"][3])
-            -- end
-
-            -- if color_override then
-            --     color = utils.colors[color_override]
-            -- end
-
-            -- if font_override then
-            --     active_font = utils.fonts[font_override]
-            -- end
-
-            -- local shader_handler = text_engine.shader_handlers[effect_override["box_shader"]]
-            -- if shader_handler then
-            --     love.graphics.setShader(shader_handler())
-            -- end
-        end
-
-        for i = 1, 1 do
-            local offset = math.floor(box_outline_offset) * 2
-            love.graphics.rectangle('line', math.floor(box.x) - box_outline_offset, math.floor(box.y) - box_outline_offset, box.w + offset, text[#text][1][3] - box.y + active_font:getHeight() + offset)
-            box_outline_offset = box_outline_offset + 2
-        end
-        love.graphics.setShader()
-        love.graphics.setColor(1, 1, 1, 1)
-    end
-
-
     local result = love.timer.getTime() - start
     print(string.format("It took %.3f milliseconds to render that shit", result * 1000))
-    
 end
 
 local result_m = love.timer.getTime() - start_m

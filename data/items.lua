@@ -19,19 +19,26 @@ items.smorc_skull = {
 		"data",
 		{
 			id = 1,
-			rarity = "common",
+			rarity = 1,
 			image = get_image("sprites/items/smorc_skull.png"),
 		}
 	},
 	{
-		"name", 
+		"text", 
 		{
+			{
+				color = 22,
+			},
 			"Smorc Skull"
 		}
 	},
 	{
-		"lore", 
+		"text",
 		{
+			{
+				color = 10,
+				font = 2,
+			},
 			"Ripped straight out of the head of a smorc."
 		}
 	},
@@ -39,33 +46,61 @@ items.smorc_skull = {
 		"big_slot",
 		{
 			{
-				"bullet",
+				"text",
 				{
-					"Accelerate your attack speed up to 3x while damaging enemies."
+					{
+						color = 9,
+					},
+					"- On kill, increase your attack speed by ",
+					{
+						color = 22,
+					},
+					"50% ",
+					{
+						color = 9,
+					},
+					"up to ",
+					{
+						color = 22,
+					},
+					"3 ",
+					{
+						color = 9,
+					},
+					"times. ",
+					{
+						color = 10,
+					},
+					"[Dur. 00:05]"
 				}
 			},
 			{
-				"attack_damage", 
+				"stat",
 				{
-					"multiply",
-					2
+					"attack_damage",
+					"add",
+					25
 				}
 			},
 			{
-				"description",
+				"text",
 				{
+					{
+						color = 22,
+						font = 2,
+					},
 					"Let the hate flow through you."
 				}
-			},
-			
+			}
 		}
 	},
 	{
 		"slot",
 		{
 			{
-				"attack_damage",
+				"stat",
 				{
+					"attack_damage",
 					"add",
 					12
 				}
@@ -76,14 +111,16 @@ items.smorc_skull = {
 		"area",
 		{
 			{
-				"attack_damage",
+				"stat",
 				{
+					"attack_damage",
 					"add",
 					5
 				}
 			}
 		}
 	}
+
 }
 
 items.mangic_ingot = {
@@ -91,81 +128,152 @@ items.mangic_ingot = {
 		"data",
 		{
 			id = 2,
-			rarity = "common",
+			rarity = 2,
 			image = get_image("sprites/items/mangic_ingot.png"),
-		}
-	},
-	{
-		"name", {
-			"Mangic Ingot",
-		}
-	},
-	{
-		"lore", {
-			"Real Mangic, ultraconcentrated into one ingot!",
-		}
-	},
-	{
-		"default", {
-			{
-				"description", {
-					"It shimmers a blue hue, emitting sparks when touched.",
-				}
+			box_line_effects = {
+				color = 22,
+			},
+			box_back_effects = {
+				color = 20,
 			}
 		}
 	},
 	{
-		"big_slot", {
+		"text",
+		{
 			{
-				"bullet", {
-					"Instead of bullets, fire a continuous laserbeam.",
-					"On hit, shock enemies for an extra 10 damage.",
-					"When an enemy is shocked, 10% chance for a bolt of lightning to arc to another enemy."
-				}
-			}
+				color = 19,
+			},
+			"Mangic Ingot"
 		}
 	},
 	{
-		"slot", {
+		"text",
+		{
 			{
-				"bullet", {
-					"If you don't already, acquire a 50 point shield at the start of every zone.",
-				},
+				color = 22,
+				font = 2,
+			},
+			"Real mangic, ultraconcentrated into a purified ingot!\n§",
+			{
+				color = 22,
+				font = 2,
+			},
+			"It shimmers a blue hue, emitting sparks when touched.",
+		}
+	},
+	{
+		"big_slot",
+		{
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"Instead of bullets, fire a continuous laserbeam.\n§",
+					{
+						color = 9,
+					},
+					"On hit, shock enemies for an extra ",
+					{
+						color = 22,
+					},
+					"10 ",
+					{
+						color = 9,
+					},
+					"damage.\n§",
+					{
+						color = 9,
+					},
+					"When an enemy is shocked, a ",
+					{
+						color = 22,
+					},
+					"10% ",
+					{
+						color = 9,
+					},
+					"chance for a lightning bolt to arc to another enemy.",
+				}
+			},
+		}
+	},
+	{
+		"slot",
+		{
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"If you don't already, acquire a ",
+					{
+						color = 22,
+					},
+					"100 ",
+					{
+						color = 9,
+					},
+					"point shield at the start of every zone.",
+				}
 			},
 			{
-				"attack_damage", {
+				"stat",
+				{
+					"attack_damage",
+					"add",
+					20
+				}
+			},
+			{
+				"stat",
+				{
+					"movement_speed",
+					"percent",
+					-20
+				}
+			},
+			{
+				"stat",
+				{
+					"armor",
 					"add",
 					5
-				},
-			},
-			{
-				"movement_speed", {
-					"percent", 
-					-5
-				},
-			},
-			{
-				"armor", {
-					"add",
-					5
 				}
 			}
 		}
 	},
 	{
-		"area", {
+		"area",
+		{
 			{
-				"bullet", {
-					"1% chance to kill non-boss enemies in one shot!",
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"On hit, gain a ",
+					{
+						color = 22,
+					},
+					"0.1% ",
+					{
+						color = 9,
+					},
+					"chance to kill non-boss enemies in one shot!",
 				}
 			},
 			{
-				"attack_damage", {
+				"stat",
+				{
+					"attack_damage",
 					"add",
 					2
 				}
 			}
-			
 		}
 	}
 }
@@ -177,40 +285,55 @@ items.weezt_bulb = {
 		"data",
 		{
 			id = 3,
-			rarity = "common",
+			rarity = 1,
 			image = get_image("sprites/items/weezt_bulb.png"),
 		}
 	},
 	{
-		"name", {
-			"Weezt Bulb"
+		"text",
+		{
+			{
+				color = 22,
+			},
+			"Weezt Bulb",
 		}
 	},
 	{
-		"lore", {
-			"Something is wriggling inside it."
+		"text",
+		{
+			{
+				color = 22,
+				font = 2,
+			},
+			"Something is wriggling inside it.",
 		}
 	},
 	{
 		"big_slot",
 		{
 			{
-				"description",
+				"text",
 				{
-					"It's alive!"
+					{
+						color = 28,
+						font = 2,
+					},
+					"It's alive!",
 				}
 			},
 			{
-				"bullet",
+				"text",
 				{
-					"The bulb has opened, summoning a Weezt Sprout to eat your foes!",
-					"The plant moves faster when exposed to sunlight."
+					{
+						color = 9,
+					},
+					"The bulb has opened, summoning a Weezt Sprout to eat your foes.\n§The plant moves faster when exposed to sunlight.",
 				}
-
 			},
 			{
-				"movement_speed",
+				"stat",
 				{
+					"movement_speed",
 					"percent",
 					20
 				}
@@ -221,10 +344,12 @@ items.weezt_bulb = {
 		"slot",
 		{
 			{
-				"bullet",
+				"text",
 				{
-					"The bulb wriggles around violently, altering your movement.",
-					"When moving fast enough, pound enemies out of the way, dealing extra damage."
+					{
+						color = 9,
+					},
+					"The bulb wriggles around violently, altering your movement.\n§When moving fast enough, pound enemies out of the way, dealing extra damage."
 				}
 			}
 		}
@@ -233,8 +358,9 @@ items.weezt_bulb = {
 		"area",
 		{
 			{
-				"movement_speed",
+				"stat",
 				{
+					"movement_speed",
 					"percent",
 					5
 				}
@@ -304,6 +430,26 @@ items.ring_of_barley = {
 					"Bread heals you for 20% more."
 				}
 			}
+		}
+	}
+}
+
+items.ring_of_barley = {
+	{
+		"data",
+		{
+			id = 4,
+			rarity = 1,
+			image = get_image("sprites/items/ring_of_barley.png"),
+		}
+	},
+	{
+		"text",
+		{
+			{
+				color = 22,
+			},
+			"Wheat Ring",
 		}
 	}
 }
@@ -1601,23 +1747,39 @@ items.gold_stainless_nail = {
 	{
 		"data",
 		{
-			id = 28,
-			rarity = "ultimate",
+			id = 53,
+			rarity = 5,
 			image = get_image("sprites/items/gold_stainless_nail.png"),
-			effect_override = {
-				box_shader = shaders.scrolling_rainbow_shader,
+			designation = "artifact",
+			soundfont = "metal",
+			box_line_effects = {
+				color = 6,
+				shader = shaders.shimmer,
+			},
+			box_back_effects = {
+				color = 6,
 			}
 		}
 	},
 	{
-		"name",
+		"text",
 		{
-			"Gold Stainless Nail"
+			{
+				color = 6,
+				shader = shaders.shimmer,
+				padding_x = 60,
+				offset_y = 0,
+			},
+			"Gold Stainless Nail",
 		}
 	},
 	{
-		"lore",
+		"text",
 		{
+			{
+				color = 10,
+				font = 2,
+			},
 			"It's been torn through the distance of man."
 		}
 	},
@@ -1625,33 +1787,144 @@ items.gold_stainless_nail = {
 		"big_slot",
 		{
 			{
-				"description",
+				"text",
 				{
-					"Unadulterated, perfect freedom."
+					{
+						color = 22,
+						font = 2,
+					},
+					"Pure freedom."
 				}
-			}
+			},
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"- Gain a buff on hit which swaps the values of your \n§   minimum and maximum attack damage. ",
+					{
+						color = 10,
+					},
+					-- modify the font to have an hourglass symbol and directional arrows
+					"[Dur. 00:07] ",
+					{
+						color = 12,
+					},
+					"[Cd. 00:10]"
+				}
+			},
+			{
+				"text",
+				{
+					{
+						color = 9,
+					},
+					"- Enemies under the reign of a powerful force reject purity, becoming friendly."
+				}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					-2
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					200
+				}
+			},
+			{
+				"stat",
+				{
+					"critical_hit_chance",
+					"add",
+					45
+				}
+			},
+			{
+				"stat",
+				{
+					"critical_hit_power",
+					"add",
+					25
+				}
+			},
 		}
 	},
 	{
 		"slot",
 		{
 			{
-				"description",
+				"text",
 				{
+					{
+						color = 22,
+						font = 2,
+					},
 					"Secrets are still held from you."
 				}
-			}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					1.5
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					100
+				}
+			},
 		}
 	},
 	{
 		"area",
 		{
 			{
-				"description",
+				"text",
 				{
+					{
+						color = 22,
+						font = 2,
+					},
 					"Going through the motions..."
 				}
-			}
+			},
+			{
+				"stat",
+				{
+					"attack_speed",
+					"multiply",
+					1.2
+				}
+			},
+			{
+				"stat",
+				{
+					"maximum_attack_damage",
+					"add",
+					20
+				}
+			},
+			{
+				"stat",
+				{
+					"healing_power",
+					"add",
+					10
+				}
+			},
 		}
 	}
 }

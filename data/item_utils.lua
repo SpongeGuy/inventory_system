@@ -1,9 +1,9 @@
 local start_m = love.timer.getTime()
 
-local utils = {}
+local item_utils = {}
 
 -- items / item tooltip box data
-utils.STAT_CATEGORIES = {
+item_utils.STAT_CATEGORIES = {
     -- be careful naming new categories because they are also the names visible on item tooltips
     -- all of these stats will be given a base value per character
 
@@ -68,7 +68,30 @@ utils.STAT_CATEGORIES = {
     screeming_scamper = "screeming_scamper",
 }
 
-utils.DESC_CATEGORIES = {
+item_utils.STAT_CATEGORIES = {
+    "attack_damage",
+    "minimum_attack_damage",
+    "maximum_attack_damage",
+    "max_health",
+    "health_regeneration",
+    "movement_speed",
+    "pierce",
+    "bounce",
+    "attack_speed",
+    "healing_power",
+    "critical_hit_chance",
+    "critical_hit_power",
+    "friend_damage",
+    "lifesteal",
+    "lil_gabbron",
+    "wizard_sponge",
+    "gangster_sponge",
+    "ant",
+    "bone_buddy",
+    "screeming_scamper"
+}
+
+item_utils.DESC_CATEGORIES = {
     name = "name",
     lore = "lore",
     description = "description",
@@ -76,21 +99,21 @@ utils.DESC_CATEGORIES = {
     note = "note",
 }
 
-utils.RARITY_COLORS = {
-    ultimate = 30,
-    legendary = 28,
-    epic = 10,
-    rare = 19,
-    common = 22,
+item_utils.RARITIES = {
+    {"common", 22},
+    {"rare", 19},
+    {"epic", 10},
+    {"legendary", 28},
+    {"ultimate", 30}
 }
 
-utils.SLOT_CATEGORIES = {
+item_utils.SLOT_CATEGORIES = {
     big_slot = "big_slot",
     slot = "slot",
     area = "area",
 }
 
-utils.SLOT_VANITY_NAMES = {
+item_utils.SLOT_VANITY_NAMES = {
     big_slot = {"Socketed:", 6},
     slot = {"Slotted:", 11},
     area = {"Bagged:", 19},
@@ -110,4 +133,4 @@ local effect_override = {
 
 local result_m = love.timer.getTime() - start_m
 print(string.format("Item Utils loaded in %.3f milliseconds!", result_m * 1000))
-return utils
+return item_utils

@@ -181,7 +181,8 @@ end
 
 
 function love.load()
-	text_engine.initialize_box_data(game_width, game_height)
+	text_engine.game_height = game_height
+	text_engine.game_width = game_width
 
 	-- spawn items
 	local temp = {}
@@ -245,26 +246,6 @@ function love.update(dt)
 
 	end
 
-	-- on mouse hover over item, update display box coordinates and metadata
-	if hover_item_uuid then
-		--text_engine.update_box_coords(m_x, m_y)
-		d_box.x = m_x
-		d_box.y = m_y
-		local i = nil
-		local s = "nil"
-		for _, item in ipairs(bagged_items) do
-			if item.uuid == hover_item_uuid then
-				i = item
-			end
-		end
-		for _, slot in ipairs(player_inventory) do
-			if i.slot_uuid == slot.uuid then
-				s = slot
-			end
-		end
-		
-		text_engine.update_box(d_box, i, s, m_x, m_y)
-	end
 
 	if love.mouse.isDown(1) then
 		hold_item()
@@ -346,7 +327,19 @@ function love.draw()
 
 		-- render item data display box if applicable
 		if hover_item_uuid and not held_item_uuid then
-			text_engine.render_box(d_box)
+			local i = nil
+			local s = "nil"
+			for _, item in ipairs(bagged_items) do
+				if item.uuid == hover_item_uuid then
+					i = item
+				end
+			end
+			for _, slot in ipairs(player_inventory) do
+				if i.slot_uuid == slot.uuid then
+					s = slot
+				end
+			end
+			text_engine.draw_item_box(i, s, m_x, m_y)
 		end
 
 		for _, particle in ipairs(particles) do

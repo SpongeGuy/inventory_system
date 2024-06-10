@@ -2,21 +2,21 @@ local start_m = love.timer.getTime()
 
 local shaders = {}
 
-shaders.reflective = love.graphics.newShader[[
-    extern vec2 displacement = vec2(0.001, 0.001);
+-- shaders.reflective = love.graphics.newShader[[
+--     extern vec2 displacement = vec2(0.001, 0.001);
 
-    vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
-    {
-        // Apply displacement to UVs
-        vec2 displacedUVs = uvs + displacement;
+--     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
+--     {
+--         // Apply displacement to UVs
+--         vec2 displacedUVs = uvs + displacement;
         
-        // Sample the texture using the displaced UVs
-        vec4 texColor = Texel(texture, displacedUVs);
+--         // Sample the texture using the displaced UVs
+--         vec4 texColor = Texel(texture, displacedUVs);
         
-        // Return the final color
-        return texColor * color;
-    }
-]]
+--         // Return the final color
+--         return texColor * color;
+--     }
+-- ]]
 
 shaders.yellow = love.graphics.newShader[[
     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
@@ -35,27 +35,32 @@ shaders.pulse = love.graphics.newShader[[
     	// calculate alpha value based on time, creating fadein and fadeout effect
     	float alpha = smoothstep(0.0, 1.0, mod(time, 0.5));
     	// interpolate between the original color and transparent black based on the calculated alpha
-        return mix(color, vec4(0.0), alpha);
-    }
-]]
-
-shaders.bounce = love.graphics.newShader[[
-    extern float time;
-
-    vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
-    {
-
-    	float normalized_time = mod(time, 1.0);
         vec4 pixel = Texel(texture, uvs);
-        vec3 c = vec3(normalized_time, 1.0, 1.0);
         if (pixel.a < 0.01) {
-        	return vec4(0.0);
+            return vec4(0.0);
         } else {
-        	return vec4(c, 1);
+            return mix(color, vec4(0.0), alpha);
         }
-        
     }
 ]]
+
+-- shaders.bounce = love.graphics.newShader[[
+--     extern float time;
+
+--     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
+--     {
+
+--     	float normalized_time = mod(time, 1.0);
+--         vec4 pixel = Texel(texture, uvs);
+--         vec3 c = vec3(normalized_time, 1.0, 1.0);
+--         if (pixel.a < 0.01) {
+--         	return vec4(0.0);
+--         } else {
+--         	return vec4(c, 1);
+--         }
+        
+--     }
+-- ]]
 
 shaders.ripple = love.graphics.newShader[[
     extern float time;
@@ -233,7 +238,7 @@ shaders.scrolling_rainbow = love.graphics.newShader[[
     }
 ]]
 
-shaders.fade = love.graphics.newShader[[
+shaders.blink = love.graphics.newShader[[
 
 	uniform float time;
 	uniform float fadeout_duration = 1;
@@ -242,8 +247,14 @@ shaders.fade = love.graphics.newShader[[
 
     vec4 effect(vec4 color, Image texture, vec2 uvs, vec2 screen_coords)
     {
+        vec4 pixel = Texel(texture, uvs);
+        if (pixel.a < 0.01) {
+            return vec4(0.0);
+        }
     	// define cycle length, including pause
     	float cycle_length = fadeout_duration + pause_duration + fadein_duration; // 2 seconds to fadeout, 2 seconds pause, 2 seconds fadein
+
+
 
     	// normalize time to the range [0, 1] for one cycle
     	float normalized_time = mod(time / cycle_length, 1.0);
