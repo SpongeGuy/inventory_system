@@ -6,6 +6,7 @@ local item_utils = require("data/item_utils")
 local utils = require("modules/utils")
 local shaders = require("data/shaders")
 local text_engine = require("modules/text_engine")
+local character_sheet = require("modules/character_sheet")
 love.graphics.setNewFont("font/PressStart2P.ttf", 8)
 local font_box = love.graphics.newFont("font/cozette.ttf", 8)
 
@@ -18,6 +19,8 @@ local window_scale = window_width/game_width
 push:setupScreen(game_width, game_height, window_width, window_height, {windowed = true})
 
 math.randomseed(os.time())
+
+local debug = false
 
 local GRAPHICS = {
 	inventory = love.graphics.newImage("sprites/inventory/inv2.png"),
@@ -117,7 +120,7 @@ end
 ---------------------------------------------------------
 
 -- player inventory origin coordinates
-p_inv_x = 330
+p_inv_x = 320
 p_inv_y = 22
 -- display box origin coordinates
 d_box = {
@@ -161,8 +164,9 @@ local loaded_objects = {
 local particles = {}
 local shockwaves = {}
 
-local menu_item_x = 615
-local menu_item_y = 22
+local menu_item_x = 80
+local menu_item_y = 20
+local debug_item_count = 0
 
 function debug_spawn_item(item_id, column, row, item_data)
 	table.insert(bagged_items, create_item(item_id, column * 22, row * 22, item_data))
@@ -171,8 +175,8 @@ end
 function debug_spawn_item(item_id, item_data)
 	table.insert(bagged_items, create_item(item_id, menu_item_x, menu_item_y, item_data))
 	menu_item_x = menu_item_x + 22
-	if menu_item_x > game_width - 140 then
-		menu_item_x = 615
+	if menu_item_x > game_width - 670 then
+		menu_item_x = 80
 		menu_item_y = menu_item_y + 22
 	end
 	
@@ -181,22 +185,39 @@ end
 
 
 function love.load()
+	love.graphics.setFont(utils.fonts[1])
 	text_engine.game_height = game_height
 	text_engine.game_width = game_width
 
 	-- spawn items
 	local temp = {}
+
 	for name, data in pairs(items) do
 		local id = data[1][2].id
 		table.insert(temp, {id = id, name = name, data = data})
 	end
+	
 
 	table.sort(temp, function(a, b) return a.id < b.id end)
 
-	for _, item in ipairs(temp) do
-		debug_spawn_item(item.name, item.data)
-	end
+	debug_items_rarities_labels = {}
+	debug_id_numbers = {}
 
+	-- print items in order by rarity first, id next
+	for index, rarity in ipairs(item_utils.RARITIES) do
+		table.insert(debug_items_rarities_labels, {item_utils.RARITIES[index], menu_item_y})
+		for _, item in ipairs(temp) do
+			if item.data[1][2]["rarity"] == index then
+				debug_spawn_item(item.name, item.data)
+				table.insert(debug_id_numbers, item.data[1][2]["id"])
+				debug_item_count = debug_item_count + 1
+			end
+		end
+		menu_item_y = menu_item_y + 34
+		menu_item_x = 80
+	end
+	
+	table.sort(debug_id_numbers)
 	
 end
 
@@ -292,15 +313,17 @@ function love.update(dt)
 	end
 end
 
-
-
 function love.draw()
+	local debug_id_x = 0
+	local debug_id_y = 400
+
 	push:start()
-		love.graphics.print(fps, 0, 0)
-		love.graphics.print(m_x, 0, 12)
-		love.graphics.print(m_y, 50, 12)
-		love.graphics.print(tostring(held_item_uuid), 0, 24)
-		love.graphics.print(tostring(hover_item_uuid), 0, 48)
+		love.graphics.setFont(utils.fonts[7])
+		-- love.graphics.print(fps, 700, 0)
+		-- love.graphics.print(m_x, 700, 12)
+		-- love.graphics.print(m_y, 750, 12)
+		-- love.graphics.print(tostring(held_item_uuid), 700, 24)
+		-- love.graphics.print(tostring(hover_item_uuid), 700, 48)
 
 		local id = nil
 		if held_item_uuid then
@@ -310,7 +333,31 @@ function love.draw()
 				end
 			end
 		end
-		love.graphics.print(tostring(id), 0, 36)
+		--love.graphics.print(tostring(id), 700, 36)
+
+
+		for _, data in ipairs(debug_items_rarities_labels) do
+			
+			text_engine.set_draw_color(data[1][2])
+			local str = utils.parse_descriptive_key(data[1][1])
+			local font = utils.fonts[7]
+			love.graphics.setFont(font)
+			love.graphics.print(str, 65 - font:getWidth(str), data[2] + 4)
+			love.graphics.setColor(1, 1, 1, 1)
+		end
+
+		local debug_item_count_str = "Item count: " .. debug_item_count
+		love.graphics.print(debug_item_count_str, 140 - utils.fonts[7]:getWidth(debug_item_count_str), 4)
+
+		if debug then
+			for index, number in ipairs(debug_id_numbers) do
+				love.graphics.setFont(utils.fonts[1])
+				love.graphics.print(number, debug_id_x, debug_id_y)
+				debug_id_x = debug_id_x + utils.fonts[1]:getWidth(number) + 4
+			end
+		end
+
+		character_sheet.print_sheet(character_sheet.carmine, 800, 4)
 		draw_player_inventory()
 		
 
@@ -323,6 +370,22 @@ function love.draw()
 			elseif not item.slot_uuid and item.image then
 				love.graphics.draw(item.image, math.floor(item.x), math.floor(item.y))
 			end
+
+			-- display id number if debug == true
+			if debug then
+				
+				local font = utils.fonts[7]
+				love.graphics.setFont(font)
+				love.graphics.setColor(1, 0, 1, 1)
+				local str = item.data[1][2]["id"]
+				love.graphics.print(str, math.floor(item.x) + 22 - font:getWidth(str), math.floor(item.y) + 22 - font:getHeight(str))
+				love.graphics.setColor(0, 1, 1, 1)
+				love.graphics.print(str, math.floor(item.x) + 21 - font:getWidth(str), math.floor(item.y) + 21 - font:getHeight(str))
+				
+				love.graphics.setFont(utils.fonts[1])
+				love.graphics.setColor(1, 1, 1, 1)
+			end
+				
 		end
 
 		-- render item data display box if applicable
@@ -342,6 +405,7 @@ function love.draw()
 			text_engine.draw_item_box(i, s, m_x, m_y)
 		end
 
+		-- particle effects
 		for _, particle in ipairs(particles) do
 			love.graphics.setColor(unpack(particle.color))
 			love.graphics.circle('fill', math.floor(particle.x), math.floor(particle.y), 1)
@@ -392,10 +456,10 @@ function love.mousereleased(x, y, button)
 					item.storage_x = item.x - p_inv_x
 					item.storage_y = item.y - p_inv_y
 				end
-				return true
+				return item, slot
 			end
 		end
-		return false
+		return nil
 	end
 
 	local function handle_item_out_of_bounds()
@@ -460,9 +524,25 @@ function love.mousereleased(x, y, button)
 	-- if item not placed out of bounds, take action for specific slot types
 	-- loop through inventory backwards because we don't want to have behavior on the inventory background first
 	if button == 1 and held_item_uuid then
-		if handle_item_out_of_bounds() then return end
+		if handle_item_out_of_bounds() then 
+			-- do operations on character sheet here
+			-- update_character_sheet()
+			print("outer")
+			return 
+		end
 		for i = #player_inventory, 1, -1 do
-			if handle_item_in_slot(i) then break end
+			if handle_item_in_slot(i) then 
+				-- do operations on character sheet here
+				-- update_character_sheet()
+				-- - reset active character sheet (make each value in active sheet equal to the corresponding value in base sheet)
+				-- - loop through items in inventory
+				-- - match slot up
+				-- - count up all stats given
+				-- - do operations on base_stats table in this order: 'add', 'percent', 'multiply'
+				-- - inject new values into active stats table
+				print("hey")
+				break 
+			end
 		end
 	end
 end
@@ -558,6 +638,7 @@ function draw_player_inventory()
 				end
 			end
 		end
+		
 	end
 	love.graphics.draw(GRAPHICS["inventory"], math.floor(p_inv_x), math.floor(p_inv_y))
 end

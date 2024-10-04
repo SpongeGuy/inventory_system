@@ -182,11 +182,8 @@ shaders.rainbow = love.graphics.newShader[[
         float normalized_time = mod(time, 359.0);
         vec3 rgb_color = hsv_to_rgb(normalized_time, 1.0, 1.0);
         vec4 pixel = Texel(texture, uvs);
-        if (pixel.a < 0.01) {
-        	return vec4(0.0);
-        } else {
-        	return vec4(rgb_color, 1.0);
-        }
+        float alpha = max(pixel.a, 0.01);
+        return vec4(rgb_color, alpha);
     }
 ]]
 
@@ -230,11 +227,8 @@ shaders.scrolling_rainbow = love.graphics.newShader[[
         float normalized_time = mod((time * scroll_speed) + screen_coords.x * color_spread, 359.0);
         vec3 rgb_color = hsv_to_rgb(normalized_time, 1.0, 1.0);
         vec4 pixel = Texel(texture, uvs);
-        if (pixel.a < 0.01) {
-        	return vec4(0.0);
-        } else {
-        	return vec4(rgb_color, 1.0);
-        }
+        float alpha = max(pixel.a, 0.01);
+        return vec4(rgb_color, alpha);
     }
 ]]
 

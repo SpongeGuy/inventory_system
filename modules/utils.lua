@@ -44,6 +44,13 @@ utils.colors = {
 utils.fonts = {
     love.graphics.newFont("font/nokiafc22.ttf", 8),
     love.graphics.newFont("font/bmmini.ttf", 8),
+    love.graphics.newFont("font/PressStart2P.ttf", 8),
+    love.graphics.newFont("font/Notalot60.ttf", 11),
+    love.graphics.newFont("font/Mitochondria.ttf", 8),
+    love.graphics.newFont("font/Ho8Bit.otf", 7),
+    love.graphics.newFont("font/princess-saves-you.otf", 9),
+    love.graphics.newFont("font/Wizard.ttf", 8),
+    love.graphics.newFont("font/crafters-delight.ttf", 16),
 }
 
 -- returns randomly seeded uuid

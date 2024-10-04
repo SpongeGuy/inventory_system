@@ -112,6 +112,10 @@ function text_engine.draw_item_box(item, slot, posx, posy)
         ["color"] = function(int)
             text_engine.set_draw_color(int)
         end,
+        ["color_override"] = function(color)
+            local r, g, b, a = love.math.colorFromBytes(color[1], color[2], color[3], color[4])
+            love.graphics.setColor(r, g, b, a)
+        end,
         ["shader"] = function(shader)
             love.graphics.setShader(shader)
         end,
@@ -135,9 +139,22 @@ function text_engine.draw_item_box(item, slot, posx, posy)
     }
 
     local item_data = item.data
+    
     local slot_mode = "default"
     if item.slot_uuid == slot.uuid then
         slot_mode = slot.mode
+    end
+
+    local item_slots = {
+        big_slot = false,
+        slot = false,
+        area = false,
+    }
+
+    for _, data in ipairs(item_data) do
+        if item_slots[data[1]] ~= nil then
+            item_slots[data[1]] = true
+        end
     end
 
     local master_offset = 25
@@ -185,7 +202,6 @@ function text_engine.draw_item_box(item, slot, posx, posy)
                 if data[i-1] and data[i-1]:find('§') then
                     last_str = data[i-1]
                     local split_string = (last_str:sub(data[i-1]:find('§') + 2))
-                    print(split_string)
                     temp_width = last_font_used:getWidth(split_string)
                 end
                 print_x = math.floor(origin_x + temp_width)
@@ -432,14 +448,43 @@ function text_engine.draw_item_box(item, slot, posx, posy)
     text_engine.send_to_shaders()
     reset_effects()
     find_box_dims()
-    if item.data[2][2][2] then
-        if box_width < last_font_used:getWidth(item.data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1]) then
-            box_width = last_font_used:getWidth(item.data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1])
+
+    -- i don't remember what this does
+    if item_data[2][2][2] then
+        if type(item_data[2][2][2]) == "number" and box_width < last_font_used:getWidth(item_data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1]) then
+            box_width = last_font_used:getWidth(item_data[2][2][2]) + 45 + last_font_used:getWidth(item_utils.RARITIES[item_universal_data["rarity"]][1])
+        end
+    end
+
+    -- fix item name and rarity string from overlapping (also makes space for bullets)
+    if item_data[2][2][2] and item_data[1][2]["rarity"] then
+        local name_string = item_data[2][2][2]
+        local rarity_string = utils.parse_descriptive_key(item_utils.RARITIES[item_data[1][2]["rarity"]][1])
+        local end_of_name_string_x = origin_x + last_font_used:getWidth(name_string)
+        local begin_of_rarity_string_x = origin_x + box_width - last_font_used:getWidth(rarity_string)
+        local difference = (begin_of_rarity_string_x - end_of_name_string_x)
+        -- this is fucked up, probably fix this eventually
+        if end_of_name_string_x + 25 > begin_of_rarity_string_x then
+            box_width = box_width + last_font_used:getWidth(name_string) - (difference)
+            begin_of_rarity_string_x = begin_of_rarity_string_x + last_font_used:getWidth(name_string) - (difference)
+            difference = (begin_of_rarity_string_x - end_of_name_string_x)
+            while difference > 40 do
+                box_width = box_width - 1
+                begin_of_rarity_string_x = origin_x + box_width - last_font_used:getWidth(rarity_string)
+                difference = math.floor(begin_of_rarity_string_x - end_of_name_string_x)
+            end
+            while difference < 39 do
+                box_width = box_width + 1
+                begin_of_rarity_string_x = origin_x + box_width - last_font_used:getWidth(rarity_string)
+                difference = math.floor(begin_of_rarity_string_x - end_of_name_string_x)
+            end
+            --love.graphics.rectangle('fill', 450, 450, difference, 1)
         end
     end
 
     -- display box
 
+    -- coordinate fixes
     if origin_x + box_width > text_engine.game_width then
         origin_x = origin_x - box_width - master_offset * 2
     end
@@ -448,6 +493,10 @@ function text_engine.draw_item_box(item, slot, posx, posy)
         origin_y = origin_y - box_height - master_offset * 2
     end
 
+    if origin_x - box_padding - 2 < 0 then origin_x = 0 + box_padding + 2 end
+
+
+    -- effects
     local box_line_effects
     if item_universal_data["box_line_effects"] then
         box_line_effects = item_universal_data["box_line_effects"]
@@ -469,15 +518,21 @@ function text_engine.draw_item_box(item, slot, posx, posy)
 
     local temp_box_padding = box_padding
 
+    local color_overridden = false
+
     for category, value in pairs(box_back_effects) do
         local handler = effect_handlers[category]
+        if category == "color_override" then color_overridden = true end
         handler(value)
     end
-    local ar, ag, ab = love.graphics.getColor()
-    ar = ar * 0.25
-    ag = ag * 0.25
-    ab = ab * 0.25
-    love.graphics.setColor(ar, ag, ab, 0.85)
+    local ar, ag, ab, aa = love.graphics.getColor()
+    if not color_overridden then
+        ar = ar * 0.25
+        ag = ag * 0.25
+        ab = ab * 0.25
+        aa = 0.85
+    end
+    love.graphics.setColor(ar, ag, ab, aa)
     love.graphics.rectangle(
         'fill', 
         math.floor(origin_x) - 0.5 - box_padding, 
@@ -530,23 +585,22 @@ function text_engine.draw_item_box(item, slot, posx, posy)
                 -- display item id
                 if text_engine.show_id then
                     local id_text = item_universal_data["id"]
-                    text_engine.visual_print(id_text, math.floor(origin_x + 5 + last_font_used:getWidth(last_text_str)), math.floor(origin_y))
+                    text_engine.visual_print(id_text, math.floor(origin_x + box_width - last_font_used:getWidth(id_text)), math.floor(origin_y - box_padding - 11))
                 end
 
                 master_x = origin_x
-            
-                -- display rarity
-                if text_engine.show_rarity then
-                    local rarity_value = item_universal_data["rarity"]
-                    local rarity_str = utils.parse_descriptive_key(item_utils.RARITIES[rarity_value][1])
-                    local print_x = math.floor(origin_x + box_width - last_font_used:getWidth(rarity_str))
 
-                    print_text_shadow(rarity_str, math.floor(print_x + 1), math.floor(origin_y + 1))
+                -- display rarity
+                local rarity_value = item_universal_data["rarity"]
+                local rarity_str = utils.parse_descriptive_key(item_utils.RARITIES[rarity_value][1])
+                local rarity_x = math.floor(origin_x + box_width - last_font_used:getWidth(rarity_str))
+                if text_engine.show_rarity then
+                    print_text_shadow(rarity_str, math.floor(rarity_x + 1), math.floor(origin_y + 1))
                     text_engine.set_draw_color(item_utils.RARITIES[rarity_value][2])
                     if rarity_value == 5 then
                         love.graphics.setShader(shaders.scrolling_rainbow)
                     end
-                    text_engine.visual_print(rarity_str, print_x, math.floor(origin_y))
+                    text_engine.visual_print(rarity_str, rarity_x, math.floor(origin_y))
                     reset_effects()
                 end
                 
@@ -561,6 +615,7 @@ function text_engine.draw_item_box(item, slot, posx, posy)
                     local slot_mod_y = 0
                     local area_mod_x = 0
                     local area_mod_y = 0
+                    local separation_value = 8
                     local speed = 15
                     local radius = 1.1
                     if slot.mode == "big_slot" then
@@ -574,21 +629,28 @@ function text_engine.draw_item_box(item, slot, posx, posy)
                         area_mod_y = (math.sin(love.timer.getTime() * speed + (math.pi / 2)) * radius)
                     end
                     if box_width / 2 - 18 < last_font_used:getWidth(last_text_str) then
-                        center_x = origin_x + last_font_used:getWidth(last_text_str) + 18
+                        
+                        center_x =  (origin_x + last_font_used:getWidth(last_text_str)) - (separation_value / 2) + ((rarity_x - (origin_x + last_font_used:getWidth(last_text_str))) / 2)
                     end
-                    print(box_width / 2 - 18, last_font_used:getWidth(last_text_str))
                     -- draw shadows
-                    text_engine.set_draw_color(1)
-                    text_engine.visual_print("¤", math.floor(center_x - 8 + area_mod_x + 1), math.floor(origin_y + area_mod_y + 1))
-                    text_engine.visual_print("¤", math.floor(center_x + slot_mod_x + 1), math.floor(origin_y + slot_mod_y + 1))
-                    text_engine.visual_print("¤", math.floor(center_x + 8 + big_slot_mod_x + 1), math.floor(origin_y + big_slot_mod_y + 1))
-
-                    text_engine.set_draw_color(19)
-                    text_engine.visual_print("¤", math.floor(center_x - 8 + area_mod_x), math.floor(origin_y + area_mod_y))
-                    text_engine.set_draw_color(11)
-                    text_engine.visual_print("¤", math.floor(center_x + slot_mod_x), math.floor(origin_y + slot_mod_y))
-                    text_engine.set_draw_color(6)
-                    text_engine.visual_print("¤", math.floor(center_x + 8 + big_slot_mod_x), math.floor(origin_y + big_slot_mod_y))
+                    if item_slots["area"] then
+                        text_engine.set_draw_color(1)
+                        text_engine.visual_print("¤", math.floor(center_x - separation_value + area_mod_x + 1), math.floor(origin_y + area_mod_y + 1))
+                        text_engine.set_draw_color(19)
+                        text_engine.visual_print("¤", math.floor(center_x - separation_value + area_mod_x), math.floor(origin_y + area_mod_y))
+                    end
+                    if item_slots["slot"] then
+                        text_engine.set_draw_color(1)
+                        text_engine.visual_print("¤", math.floor(center_x + slot_mod_x + 1), math.floor(origin_y + slot_mod_y + 1))
+                        text_engine.set_draw_color(11)
+                        text_engine.visual_print("¤", math.floor(center_x + slot_mod_x), math.floor(origin_y + slot_mod_y))
+                    end
+                    if item_slots["big_slot"] then
+                        text_engine.set_draw_color(1)
+                        text_engine.visual_print("¤", math.floor(center_x + separation_value + big_slot_mod_x + 1), math.floor(origin_y + big_slot_mod_y + 1))
+                        text_engine.set_draw_color(6)
+                        text_engine.visual_print("¤", math.floor(center_x + separation_value + big_slot_mod_x), math.floor(origin_y + big_slot_mod_y))
+                    end
                 end
 
                 -- display designation
@@ -653,9 +715,8 @@ function text_engine.draw_item_box(item, slot, posx, posy)
         reset_values()
         ::continue::
     end
-    print()
     local result = love.timer.getTime() - start
-    print(string.format("It took %.3f milliseconds to render that shit", result * 1000))
+    --print(string.format("It took %.3f milliseconds to render that shit", result * 1000))
 end
 
 local result_m = love.timer.getTime() - start_m

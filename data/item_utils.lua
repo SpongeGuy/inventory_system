@@ -102,9 +102,9 @@ item_utils.DESC_CATEGORIES = {
 item_utils.RARITIES = {
     {"common", 22},
     {"rare", 19},
-    {"epic", 10},
-    {"legendary", 28},
-    {"ultimate", 30}
+    {"epic", 11},
+    {"legendary", 6},
+    {"mythic", 30}
 }
 
 item_utils.SLOT_CATEGORIES = {
